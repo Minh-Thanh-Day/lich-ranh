@@ -739,7 +739,7 @@
          API_BASE là URL thật của Worker (dạng https://...workers.dev).
          Lúc chưa thay placeholder thì SYNC_ENABLED = false và trang chạy
          hoàn toàn offline như bản tĩnh cũ. */
-      var API_BASE = "__WORKER_URL__";
+      var API_BASE = "https://lich-ranh-sync.launemten.workers.dev";
       var SYNC_ENABLED = typeof API_BASE === "string" && API_BASE.indexOf("https://") === 0;
       var lastSyncedAt = 0;      /* updatedAt mới nhất đã thấy trên server */
       var saveTimer = null;
