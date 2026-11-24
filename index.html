@@ -86,6 +86,12 @@
         border: 1px solid #f0dfa0; padding: 0.75rem 1rem;
         font-size: 0.875rem; line-height: 1.6; font-weight: 500;
       }
+      .sync-status {
+        margin-top: 0.5rem; max-width: 42rem; font-size: 0.875rem;
+        line-height: 1.6; font-weight: 600; color: var(--dim);
+      }
+      .sync-status.is-saved { color: #0d7a54; }
+      .sync-status.is-error { color: #c7431d; }
       header.hero { max-width: 42rem; }
 
       /* ---- Month tabs ---- */
@@ -311,6 +317,52 @@
       .avatar-center .btn-accent { margin-top: 1rem; cursor: pointer; }
       .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+      /* ---- Small screens: same look, fitted to a phone ---- */
+      @media (max-width: 767px) {
+        main { padding: 1.5rem 0.875rem 3rem; }
+        /* Portrait crop zooms the group photo in, so deepen the pastel wash
+           until it sits as quietly behind the text as it does on desktop. */
+        .bg-wash {
+          background: linear-gradient(180deg, rgba(242,239,252,0.96) 0%, rgba(242,239,252,0.93) 45%, rgba(242,239,252,0.97) 100%);
+        }
+        .blob-1 { width: 11rem; height: 11rem; }
+        .blob-2 { width: 12rem; height: 12rem; }
+        .blob-3 { width: 10rem; height: 10rem; }
+
+        h1.title { font-size: 2rem; margin-top: 0.875rem; }
+        .title-accent::after { height: 0.5625rem; }
+        .intro { font-size: 0.9375rem; }
+        .notice { font-size: 0.8125rem; padding: 0.75rem 0.875rem; border-radius: 14px; }
+
+        /* Months become a tidy 3-across grid instead of two huge pills per row;
+           the row's action buttons get a full-width row of their own. */
+        .month-row { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+        .month-tab {
+          font-size: clamp(0.72rem, 3.4vw, 0.875rem);
+          padding: 0.4375rem 0.125rem; text-align: center; white-space: nowrap;
+        }
+        .collapse-btn, .add-month-btn { grid-column: 1 / -1; justify-content: center; font-size: 0.9375rem; }
+        .remove-month-link { grid-column: 1 / -1; text-align: center; padding: 0.25rem; }
+
+        .card { border-radius: 24px; }
+        .board { padding: 0.875rem; }
+        .person-name { font-size: 1rem; }
+        .avatar-44 { width: 40px; height: 40px; font-size: 1rem; }
+        .icon-btn { width: 34px; height: 34px; min-height: 34px; }
+        .week-grid { gap: 5px; }
+        .day-cell.compact { min-height: 3.25rem; }
+        .budget-btn-row { padding: 0.5625rem 0.875rem; }
+
+        .summary-card, .event-card { padding: 1.125rem; }
+        .total-money { font-size: 1.875rem; }
+        .events-section { margin-top: 2rem; }
+        .events-head h2 { font-size: 1.375rem; }
+        .cta-btn { padding: 0.5625rem 1.125rem; font-size: 0.9375rem; }
+        .event-card h3 { font-size: 1.25rem; }
+        .vote-btn { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+        .dialog { padding: 1.25rem; padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
+      }
+
       /* ---- Motion ---- */
       @keyframes lich-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
       @keyframes lich-pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
@@ -353,11 +405,11 @@
           cả nhóm cùng rảnh để hẹn nhau đi chơi.
         </p>
         <p class="notice">
-          Lưu ý: đây là bản công khai để gửi link cho bạn bè. Phần bạn điền
-          chỉ hiện trên máy của bạn trong lúc mở trang này — bạn bè mở link
-          sẽ không thấy phần bạn đã điền, và dữ liệu ở bản lưu chung cũng
-          không chuyển sang đây.
+          Lưu ý: đây là bản công khai để gửi link cho bạn bè. Mọi người
+          điền đều lưu chung, ai mở link cũng thấy — lịch rảnh, ngân sách
+          và sự kiện của cả nhóm luôn đồng bộ với nhau.
         </p>
+        <p class="sync-status" id="sync-status">Đang đồng bộ…</p>
       </header>
 
       <div id="app"></div>
@@ -522,6 +574,7 @@
         if (state.months.length === 0) {
           html += '<div class="card card-soft empty-box"><p class="big">Chưa có tháng nào</p><p>Thêm tháng đầu tiên để cả nhóm bắt đầu điền lịch rảnh.</p></div>';
           root.innerHTML = html;
+          scheduleSave();
           return;
         }
 
@@ -600,6 +653,7 @@
         html += "</div>";
 
         root.innerHTML = html;
+        scheduleSave();
       }
 
       function sharedDays() {
@@ -619,6 +673,7 @@
         var root = document.getElementById("events-root");
         if (state.events.length === 0) {
           root.innerHTML = '<div class="card card-soft empty-box"><p class="big">Chưa có chuyến đi nào</p><p>Bấm “+ Thêm sự kiện” để lên kế hoạch chuyến đi đầu tiên cho cả nhóm.</p></div>';
+          scheduleSave();
           return;
         }
         var html = '<div class="events-grid">';
@@ -675,9 +730,129 @@
         });
         html += "</div>";
         root.innerHTML = html;
+        scheduleSave();
       }
 
       function renderAll() { renderBoard(); renderEvents(); }
+
+      /* ---------------- Shared sync (Cloudflare Worker + KV) ----------------
+         API_BASE là URL thật của Worker (dạng https://...workers.dev).
+         Lúc chưa thay placeholder thì SYNC_ENABLED = false và trang chạy
+         hoàn toàn offline như bản tĩnh cũ. */
+      var API_BASE = "__WORKER_URL__";
+      var SYNC_ENABLED = typeof API_BASE === "string" && API_BASE.indexOf("https://") === 0;
+      var lastSyncedAt = 0;      /* updatedAt mới nhất đã thấy trên server */
+      var saveTimer = null;
+      var savePending = false;   /* có lượt lưu local đang chờ gửi */
+      var initialLoadDone = false;
+      var applyingRemote = false; /* đang áp state từ server: không lưu lại */
+
+      function setSyncStatus(kind, text) {
+        var el = document.getElementById("sync-status");
+        if (!el) return;
+        el.textContent = text;
+        el.className = "sync-status" + (kind === "saved" ? " is-saved" : kind === "error" ? " is-error" : "");
+      }
+
+      function applyRemoteState(remote) {
+        if (!remote || !Array.isArray(remote.people) || !Array.isArray(remote.months)) return false;
+        state.people = remote.people;
+        state.months = remote.months;
+        state.activeMonth = remote.activeMonth && remote.months.indexOf(remote.activeMonth) !== -1
+          ? remote.activeMonth : (remote.months[0] || null);
+        state.monthsCollapsed = !!remote.monthsCollapsed;
+        state.cells = remote.cells || {};
+        state.budgets = remote.budgets || {};
+        state.events = remote.events || [];
+        /* Tránh trùng id khi thêm người/sự kiện/địa điểm mới. */
+        var maxId = 0;
+        state.people.forEach(function (p) { if (p.id > maxId) maxId = p.id; });
+        state.events.forEach(function (ev) {
+          if (ev.id > maxId) maxId = ev.id;
+          (ev.places || []).forEach(function (pl) { if (pl.id > maxId) maxId = pl.id; });
+        });
+        nextId = Math.max(nextId, maxId + 1);
+        return true;
+      }
+
+      function loadFromServer() {
+        if (!SYNC_ENABLED) {
+          setSyncStatus("off", "Chưa đồng bộ — chỉ lưu trên máy này");
+          return Promise.resolve(false);
+        }
+        setSyncStatus("syncing", "Đang đồng bộ…");
+        var fetchP = fetch(API_BASE + "/api/state", { method: "GET" }).then(function (r) {
+          if (r.status === 404) return null;
+          if (!r.ok) throw new Error("http " + r.status);
+          return r.json();
+        });
+        var timeoutP = new Promise(function (resolve) {
+          setTimeout(function () { resolve("timeout"); }, 5000);
+        });
+        return Promise.race([fetchP, timeoutP]).then(function (data) {
+          if (data === "timeout" || !data || !data.state) {
+            setSyncStatus("error", "Chưa đồng bộ — chỉ lưu trên máy này");
+            return false;
+          }
+          if (applyRemoteState(data.state)) {
+            lastSyncedAt = data.updatedAt || 0;
+            setSyncStatus("saved", "Đã lưu chung");
+            return true;
+          }
+          setSyncStatus("error", "Chưa đồng bộ — chỉ lưu trên máy này");
+          return false;
+        }).catch(function () {
+          setSyncStatus("error", "Chưa đồng bộ — chỉ lưu trên máy này");
+          return false;
+        });
+      }
+
+      function scheduleSave() {
+        if (!SYNC_ENABLED || !initialLoadDone || applyingRemote) return;
+        savePending = true;
+        setSyncStatus("syncing", "Đang lưu…");
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveToServer, 800);
+      }
+
+      function saveToServer() {
+        saveTimer = null;
+        if (!SYNC_ENABLED) { savePending = false; return; }
+        fetch(API_BASE + "/api/state", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: state })
+        }).then(function (r) {
+          if (!r.ok) throw new Error("http " + r.status);
+          return r.json();
+        }).then(function (data) {
+          lastSyncedAt = (data && data.updatedAt) || Date.now();
+          savePending = false;
+          setSyncStatus("saved", "Đã lưu chung");
+        }).catch(function () {
+          savePending = false;
+          setSyncStatus("error", "Chưa đồng bộ — chỉ lưu trên máy này");
+        });
+      }
+
+      function pollServer() {
+        if (!SYNC_ENABLED || savePending || !initialLoadDone) return;
+        fetch(API_BASE + "/api/state", { method: "GET" }).then(function (r) {
+          if (!r.ok) return null;
+          return r.json();
+        }).then(function (data) {
+          if (!data || !data.state) return;
+          if ((data.updatedAt || 0) > lastSyncedAt) {
+            applyingRemote = true;
+            if (applyRemoteState(data.state)) {
+              lastSyncedAt = data.updatedAt || 0;
+              renderAll();
+              setSyncStatus("saved", "Đã lưu chung");
+            }
+            applyingRemote = false;
+          }
+        }).catch(function () { /* giữ nguyên trạng thái hiện tại */ });
+      }
 
       /* ---------------- Dialogs ---------------- */
       var dialogRoot = document.getElementById("dialog-root");
@@ -1054,7 +1229,16 @@
         if (e.key === "Escape" && dialogRoot.innerHTML) closeDialog();
       });
 
-      renderAll();
+      /* Khởi động: lấy state chung từ server (nếu có) rồi mới vẽ lần đầu.
+         Không có mạng hoặc chưa có dữ liệu thì dùng state mặc định có sẵn. */
+      loadFromServer().then(function () {
+        renderAll();
+        initialLoadDone = true;
+      });
+      setInterval(pollServer, 30000);
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) pollServer();
+      });
 </script>
   </body>
 </html>
