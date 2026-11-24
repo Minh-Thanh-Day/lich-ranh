@@ -92,6 +92,23 @@
       }
       .sync-status.is-saved { color: #0d7a54; }
       .sync-status.is-error { color: #c7431d; }
+      .header-actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
+      .bg-btn {
+        font-family: var(--font-display); display: inline-flex; align-items: center; gap: 0.375rem;
+        border-radius: 9999px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: 700;
+        background: var(--accent-soft); color: var(--accent);
+        box-shadow: 0 6px 18px rgba(108,76,241,0.15);
+      }
+      .bg-btn svg { flex-shrink: 0; }
+
+      /* ---- Background picker dialog ---- */
+      .bg-swatch-grid { margin-top: 0.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+      .bg-swatch { height: 3.5rem; min-height: 3.5rem; border-radius: 16px; border: 2px solid transparent; padding: 0; }
+      .bg-swatch.selected { border-color: var(--accent); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); }
+      .bg-upload-row { margin-top: 1rem; display: flex; flex-direction: column; align-items: center; }
+      .bg-upload-row .btn-accent { cursor: pointer; }
+      .bg-preview { margin-top: 1rem; border-radius: 16px; overflow: hidden; }
+      .bg-preview img, .bg-preview .bg-preview-color { width: 100%; height: 8rem; object-fit: cover; display: block; }
       header.hero { max-width: 42rem; }
 
       /* ---- Month tabs ---- */
@@ -401,15 +418,13 @@
         <h1 class="title">Lịch rảnh <span class="title-accent">trong tuần</span></h1>
         <p class="intro">
           Mỗi người ghi giờ rảnh của mình theo từng ngày trong tuần và phần
-          ngân sách của mình cho từng tháng. Điền xong là thấy ngay ngày nào
+          tiền của mình cho từng tháng. Điền xong là thấy ngay ngày nào
           cả nhóm cùng rảnh để hẹn nhau đi chơi.
         </p>
-        <p class="notice">
-          Lưu ý: đây là bản công khai để gửi link cho bạn bè. Mọi người
-          điền đều lưu chung, ai mở link cũng thấy — lịch rảnh, ngân sách
-          và sự kiện của cả nhóm luôn đồng bộ với nhau.
-        </p>
         <p class="sync-status" id="sync-status">Đang đồng bộ…</p>
+        <div class="header-actions">
+          <button type="button" class="bg-btn press" id="change-bg-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>Đổi nền</button>
+        </div>
       </header>
 
       <div id="app"></div>
@@ -446,6 +461,14 @@
         { solid: "#3d8bff", soft: "#dcecff", ink: "#1c5fc0" },
         { solid: "#ef5da8", soft: "#ffe0f0", ink: "#b92c77" }
       ];
+      var BG_PRESETS = [
+        { name: "Tím nhạt", value: "linear-gradient(160deg, #efeaff 0%, #d9ccff 100%)" },
+        { name: "Cam đào", value: "linear-gradient(160deg, #ffe9de 0%, #ffd3bd 100%)" },
+        { name: "Xanh bạc hà", value: "linear-gradient(160deg, #dcf7e8 0%, #bdeeda 100%)" },
+        { name: "Xanh da trời", value: "linear-gradient(160deg, #dcecff 0%, #c2ddff 100%)" },
+        { name: "Hồng phấn", value: "linear-gradient(160deg, #ffe3f0 0%, #ffd0e6 100%)" },
+        { name: "Vàng nắng", value: "linear-gradient(160deg, #fff4d1 0%, #ffe9a6 100%)" }
+      ];
 
       var nextId = 100;
       function uid() { return nextId++; }
@@ -462,7 +485,8 @@
         monthsCollapsed: false,
         cells: {},   /* monthKey -> { "personId:day": note } */
         budgets: {}, /* monthKey -> { personId: amount } */
-        events: []   /* { id, title, startDate, endDate, note, places: [{id, personId, place}], votes: {personId: "go"|"no"} } */
+        events: [],   /* { id, title, startDate, endDate, note, places: [{id, personId, place}], votes: {personId: "go"|"no"} } */
+        background: { mode: "default", value: null } /* nền chung của cả nhóm: {mode: "default"|"photo"|"color", value: null|dataURL JPEG|màu/gradient CSS} */
       };
       (function seedMonths() {
         var y = 2026, m = 11;
@@ -588,15 +612,15 @@
           /* Desktop */
           html += '<div class="board-desktop"><table class="grid"><thead><tr><th class="name-col">Tên</th>';
           DAYS.forEach(function (d) { html += "<th>" + d + "</th>"; });
-          html += '<th class="budget-col">Ngân sách</th></tr></thead><tbody>';
+          html += '<th class="budget-col">Tiền</th></tr></thead><tbody>';
           state.people.forEach(function (person, idx) {
             var budget = budgetOf(person.id);
             html += "<tr>";
             html += '<td><div class="person-cell">' + personNameHTML(person, idx) + "</div></td>";
             for (var day = 0; day < 7; day++) html += "<td>" + dayCellHTML(person, idx, day, false) + "</td>";
             html += "<td>" + (budget != null
-              ? '<button type="button" class="budget-btn filled press" data-action="budget" data-id="' + person.id + '" aria-label="Ngân sách của ' + esc(person.name) + '">' + formatMoney(budget) + "</button>"
-              : '<button type="button" class="budget-btn unfilled press" data-action="budget" data-id="' + person.id + '" aria-label="Ngân sách của ' + esc(person.name) + '">+ Điền</button>') + "</td>";
+              ? '<button type="button" class="budget-btn filled press" data-action="budget" data-id="' + person.id + '" aria-label="Tiền của ' + esc(person.name) + '">' + formatMoney(budget) + "</button>"
+              : '<button type="button" class="budget-btn unfilled press" data-action="budget" data-id="' + person.id + '" aria-label="Tiền của ' + esc(person.name) + '">+ Điền</button>') + "</td>";
             html += "</tr>";
           });
           html += "</tbody></table></div>";
@@ -610,7 +634,7 @@
             DAYS_SHORT.forEach(function (s) { html += '<span class="day-head">' + s + "</span>"; });
             for (var day = 0; day < 7; day++) html += dayCellHTML(person, idx, day, true);
             html += "</div>";
-            html += '<button type="button" class="budget-btn-row press ' + (budget != null ? "filled" : "unfilled") + '" data-action="budget" data-id="' + person.id + '" aria-label="Ngân sách của ' + esc(person.name) + '"><span>Ngân sách</span><span>' + (budget != null ? formatMoney(budget) : "+ Điền") + "</span></button>";
+            html += '<button type="button" class="budget-btn-row press ' + (budget != null ? "filled" : "unfilled") + '" data-action="budget" data-id="' + person.id + '" aria-label="Tiền của ' + esc(person.name) + '"><span>Tiền</span><span>' + (budget != null ? formatMoney(budget) : "+ Điền") + "</span></button>";
             html += "</div>";
           });
           html += "</div>";
@@ -634,10 +658,10 @@
         }
         html += "</section>";
 
-        html += '<section class="card card-soft summary-card" aria-label="Tổng ngân sách"><h2>Ngân sách ' + monthLabel(state.activeMonth) + "</h2>";
+        html += '<section class="card card-soft summary-card" aria-label="Tổng tiền"><h2>Tiền ' + monthLabel(state.activeMonth) + "</h2>";
         var entries = state.people.filter(function (p) { return budgetOf(p.id) != null; });
         if (entries.length === 0) {
-          html += '<p class="dim-text">Chưa ai điền ngân sách. Bấm vào ô ngân sách ở hàng của mình để điền số tiền.</p>';
+          html += '<p class="dim-text">Chưa ai điền tiền. Bấm vào ô tiền ở hàng của mình để điền số tiền.</p>';
         } else {
           var total = entries.reduce(function (sum, p) { return sum + budgetOf(p.id); }, 0);
           html += '<p class="total-money">' + formatMoney(total) + '</p><p style="font-size:0.875rem;color:var(--dim);margin:0">Tổng của cả nhóm</p>';
@@ -735,6 +759,43 @@
 
       function renderAll() { renderBoard(); renderEvents(); }
 
+      /* ---------------- Shared background (nền chung của cả nhóm) ----------------
+         state.background = { mode: "default" | "photo" | "color", value }.
+         - default: ảnh nhóm nhúng sẵn trong file (img gốc của .bg-wrap).
+         - photo: ảnh do cả nhóm tải lên, lưu dạng data URL JPEG trong state.
+         - color: màu trơn hoặc gradient pastel (chuỗi CSS background).
+         Lớp phủ pastel .bg-wash luôn nằm trên mọi nền nên chữ vẫn đọc rõ. */
+      var DEFAULT_BG_IMG = null; /* src gốc của ảnh nhóm, chụp lại lần áp nền đầu tiên */
+      function validBackground(bg) {
+        if (!bg || typeof bg !== "object") return null;
+        if (bg.mode === "default") return { mode: "default", value: null };
+        if (bg.mode === "photo" && typeof bg.value === "string" && bg.value.indexOf("data:image/") === 0) {
+          return { mode: "photo", value: bg.value };
+        }
+        if (bg.mode === "color" && typeof bg.value === "string" &&
+            /^(#[0-9a-fA-F]{3,8}|(linear|radial)-gradient\(|rgba?\(|hsla?\()/.test(bg.value)) {
+          return { mode: "color", value: bg.value };
+        }
+        return null;
+      }
+      function applyBackground() {
+        var wrap = document.querySelector(".bg-wrap");
+        if (!wrap) return;
+        var img = wrap.querySelector("img");
+        if (DEFAULT_BG_IMG === null && img) DEFAULT_BG_IMG = img.getAttribute("src") || "";
+        var bg = validBackground(state.background) || { mode: "default", value: null };
+        if (bg.mode === "photo") {
+          if (img) { img.src = bg.value; img.style.display = ""; }
+          wrap.style.background = "";
+        } else if (bg.mode === "color") {
+          if (img) img.style.display = "none";
+          wrap.style.background = bg.value;
+        } else {
+          if (img) { if (DEFAULT_BG_IMG) img.src = DEFAULT_BG_IMG; img.style.display = ""; }
+          wrap.style.background = "";
+        }
+      }
+
       /* ---------------- Shared sync (Cloudflare Worker + KV) ----------------
          API_BASE là URL thật của Worker (dạng https://...workers.dev).
          Lúc chưa thay placeholder thì SYNC_ENABLED = false và trang chạy
@@ -764,6 +825,7 @@
         state.cells = remote.cells || {};
         state.budgets = remote.budgets || {};
         state.events = remote.events || [];
+        state.background = validBackground(remote.background) || { mode: "default", value: null };
         /* Tránh trùng id khi thêm người/sự kiện/địa điểm mới. */
         var maxId = 0;
         state.people.forEach(function (p) { if (p.id > maxId) maxId = p.id; });
@@ -772,6 +834,7 @@
           (ev.places || []).forEach(function (pl) { if (pl.id > maxId) maxId = pl.id; });
         });
         nextId = Math.max(nextId, maxId + 1);
+        applyBackground();
         return true;
       }
 
@@ -868,7 +931,7 @@
         var first = dialogRoot.querySelector("input, select");
         if (first) { try { first.focus(); } catch (e) {} }
       }
-      function closeDialog() { dialogRoot.innerHTML = ""; formError = null; avatarDraft = null; }
+      function closeDialog() { dialogRoot.innerHTML = ""; formError = null; avatarDraft = null; bgDraft = null; }
       function errorHTML() {
         return formError ? '<p class="form-error">' + esc(formError) + "</p>" : "";
       }
@@ -921,12 +984,12 @@
       function openBudgetDialog(person) {
         formError = null;
         var current = budgetOf(person.id);
-        openDialog("Ngân sách của " + person.name,
+        openDialog("Tiền của " + person.name,
           '<label class="field-label" for="budget-amount">Số tiền cho ' + monthLabel(state.activeMonth) + ' (VNĐ)</label>' +
           '<input id="budget-amount" class="field big" type="text" inputmode="numeric" value="' + (current != null ? moneyFmt.format(current) : "") + '" placeholder="Ví dụ: 500.000" />' +
           '<div class="form-error-slot"></div>' +
           '<div class="dialog-actions">' +
-          (current != null ? '<button type="button" class="btn-delete-text" id="dlg-clear">Xoá ngân sách</button>' : "") +
+          (current != null ? '<button type="button" class="btn-delete-text" id="dlg-clear">Xoá tiền</button>' : "") +
           '<span class="spacer"></span>' +
           '<button type="button" class="btn-cancel press" id="dlg-cancel">Huỷ</button>' +
           '<button type="button" class="btn-save press" id="dlg-save">Lưu</button></div>');
@@ -1077,6 +1140,7 @@
 
       /* Avatar: pick a photo, center-crop to a square, downscale to <=512px */
       var avatarDraft = null;
+      var bgDraft = null; /* nền đang chọn trong hộp thoại Đổi nền, chưa lưu */
       function openAvatarDialog(person, idx) {
         formError = null;
         avatarDraft = null;
@@ -1140,6 +1204,103 @@
         });
       }
 
+      /* Background: pick a pastel preset or upload a photo (kept full-frame,
+         downscaled so the longest side is <=1600px), saved shared like avatars. */
+      function openBackgroundDialog() {
+        formError = null;
+        bgDraft = null;
+        var current = validBackground(state.background) || { mode: "default", value: null };
+        var swatches = BG_PRESETS.map(function (p, i) {
+          var sel = current.mode === "color" && current.value === p.value;
+          return '<button type="button" class="bg-swatch press' + (sel ? " selected" : "") + '" data-bg="' + i + '" style="background:' + p.value + '" aria-label="' + esc(p.name) + '" title="' + esc(p.name) + '"></button>';
+        }).join("");
+        openDialog("Đổi nền",
+          '<p class="field-label">Nền pastel có sẵn</p>' +
+          '<div class="bg-swatch-grid">' + swatches + "</div>" +
+          '<div class="bg-upload-row">' +
+          '<label class="btn-accent press">Tải ảnh lên làm nền' +
+          '<input id="bg-file" class="sr-only" type="file" accept="image/*" aria-label="Chọn ảnh nền" /></label>' +
+          '<p style="margin:0.75rem 0 0;text-align:center;font-size:0.875rem;color:var(--dim);line-height:1.65">Ảnh được thu nhỏ còn tối đa 1600px rồi lưu chung cho cả nhóm cùng thấy.</p></div>' +
+          '<div id="bg-preview" class="bg-preview" style="display:none"></div>' +
+          '<div class="form-error-slot"></div>' +
+          '<div class="dialog-actions">' +
+          (current.mode !== "default" ? '<button type="button" class="btn-delete-text" id="dlg-default">Về nền mặc định</button>' : "") +
+          '<span class="spacer"></span>' +
+          '<button type="button" class="btn-cancel press" id="dlg-cancel">Huỷ</button>' +
+          '<button type="button" class="btn-save press" id="dlg-save" disabled>Lưu nền</button></div>');
+        var preview = document.getElementById("bg-preview");
+        var saveBtn = document.getElementById("dlg-save");
+        function showPreview() {
+          if (!bgDraft) { preview.style.display = "none"; preview.innerHTML = ""; return; }
+          preview.style.display = "";
+          if (bgDraft.mode === "photo") {
+            preview.innerHTML = '<img src="' + bgDraft.value + '" alt="Ảnh nền mới" />';
+          } else {
+            preview.innerHTML = '<div class="bg-preview-color" style="background:' + bgDraft.value + '"></div>';
+          }
+        }
+        dialogRoot.querySelectorAll("[data-bg]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            bgDraft = { mode: "color", value: BG_PRESETS[Number(btn.getAttribute("data-bg"))].value };
+            dialogRoot.querySelectorAll("[data-bg]").forEach(function (b) { b.classList.remove("selected"); });
+            btn.classList.add("selected");
+            showPreview();
+            saveBtn.disabled = false;
+            setError(null);
+          });
+        });
+        document.getElementById("bg-file").addEventListener("change", function (e) {
+          var file = e.target.files && e.target.files[0];
+          e.target.value = "";
+          if (!file) return;
+          fileToBackgroundDataUrl(file).then(function (dataUrl) {
+            bgDraft = { mode: "photo", value: dataUrl };
+            dialogRoot.querySelectorAll("[data-bg]").forEach(function (b) { b.classList.remove("selected"); });
+            showPreview();
+            saveBtn.disabled = false;
+            setError(null);
+          }).catch(function () {
+            setError("Chưa đọc được ảnh này, bạn thử chọn ảnh khác nhé.");
+          });
+        });
+        document.getElementById("dlg-cancel").addEventListener("click", closeDialog);
+        document.getElementById("dlg-save").addEventListener("click", function () {
+          if (!bgDraft) return;
+          state.background = bgDraft;
+          applyBackground();
+          closeDialog(); renderAll(); scheduleSave();
+        });
+        var defaultBtn = document.getElementById("dlg-default");
+        if (defaultBtn) defaultBtn.addEventListener("click", function () {
+          state.background = { mode: "default", value: null };
+          applyBackground();
+          closeDialog(); renderAll(); scheduleSave();
+        });
+      }
+      function fileToBackgroundDataUrl(file) {
+        return new Promise(function (resolve, reject) {
+          var objectUrl = URL.createObjectURL(file);
+          var img = new Image();
+          img.onload = function () {
+            try {
+              var w = img.naturalWidth, h = img.naturalHeight;
+              if (!w || !h) throw new Error("empty");
+              var scale = Math.min(1, 1600 / Math.max(w, h));
+              var canvas = document.createElement("canvas");
+              canvas.width = Math.round(w * scale);
+              canvas.height = Math.round(h * scale);
+              var ctx = canvas.getContext("2d");
+              if (!ctx) throw new Error("no ctx");
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL("image/jpeg", 0.8));
+            } catch (err) { reject(err); }
+            finally { URL.revokeObjectURL(objectUrl); }
+          };
+          img.onerror = function () { URL.revokeObjectURL(objectUrl); reject(new Error("load failed")); };
+          img.src = objectUrl;
+        });
+      }
+
       /* ---------------- Actions (event delegation) ---------------- */
       document.addEventListener("click", function (e) {
         var btn = e.target.closest("[data-action]");
@@ -1157,7 +1318,7 @@
           openMonthDialog();
         } else if (action === "remove-month") {
           var key = state.activeMonth;
-          openConfirm("Xoá " + monthLabel(key) + " cùng toàn bộ lịch rảnh và ngân sách của tháng này?", function () {
+          openConfirm("Xoá " + monthLabel(key) + " cùng toàn bộ lịch rảnh và tiền của tháng này?", function () {
             state.months = state.months.filter(function (k) { return k !== key; });
             delete state.cells[key];
             delete state.budgets[key];
@@ -1178,7 +1339,7 @@
           if (rp) openPersonDialog("rename", rp);
         } else if (action === "remove-person") {
           var dp = personById(id);
-          if (dp) openConfirm("Xoá " + dp.name + " khỏi bảng, cùng toàn bộ lịch rảnh và ngân sách của " + dp.name + "?", function () {
+          if (dp) openConfirm("Xoá " + dp.name + " khỏi bảng, cùng toàn bộ lịch rảnh và tiền của " + dp.name + "?", function () {
             state.people = state.people.filter(function (p) { return p.id !== id; });
             Object.keys(state.cells).forEach(function (mk) {
               Object.keys(state.cells[mk]).forEach(function (ck) {
@@ -1225,6 +1386,7 @@
       });
 
       document.getElementById("add-event-btn").addEventListener("click", openEventDialog);
+      document.getElementById("change-bg-btn").addEventListener("click", openBackgroundDialog);
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && dialogRoot.innerHTML) closeDialog();
       });
@@ -1232,6 +1394,7 @@
       /* Khởi động: lấy state chung từ server (nếu có) rồi mới vẽ lần đầu.
          Không có mạng hoặc chưa có dữ liệu thì dùng state mặc định có sẵn. */
       loadFromServer().then(function () {
+        applyBackground();
         renderAll();
         initialLoadDone = true;
       });
