@@ -100,6 +100,7 @@
         box-shadow: 0 6px 18px rgba(108,76,241,0.15);
       }
       .bg-btn svg { flex-shrink: 0; }
+      .bg-btn.sound-off { opacity: 0.6; }
 
       /* ---- Background picker dialog ---- */
       .bg-swatch-grid { margin-top: 0.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
@@ -457,10 +458,6 @@
         <span class="badge"><span class="dot"></span>Bảng lịch của cả nhóm</span>
         <h1 class="splash-title">Lịch rảnh <span class="title-accent">trong tuần</span></h1>
         <p class="splash-tagline">Nơi biến dự án ma thành sự thật</p>
-        <p class="splash-intro">
-          Mỗi người ghi giờ rảnh của mình theo từng ngày, phần tiền của mình
-          cho từng tháng, rồi cùng lên kế hoạch cho những chuyến đi chơi vài ngày.
-        </p>
         <button type="button" class="splash-enter press" id="enter-main-btn">Vào trang chính</button>
       </div>
     </div>
@@ -485,6 +482,7 @@
         <p class="sync-status" id="sync-status">Đang đồng bộ…</p>
         <div class="header-actions">
           <button type="button" class="bg-btn press" id="change-bg-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>Đổi nền</button>
+          <button type="button" class="bg-btn press" id="sound-toggle-btn" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.6 5.4a9 9 0 0 1 0 13.2"/></svg><span id="sound-toggle-label">Âm thanh: Bật</span></button>
         </div>
       </header>
 
@@ -1361,6 +1359,73 @@
           img.src = objectUrl;
         });
       }
+
+      /* ---------------- Âm thanh khi bấm nút ----------------
+         WebAudio, không file ngoài, trang giữ tự chứa. AudioContext
+         chỉ tạo/khôi phục trong thao tác bấm của người dùng (đúng
+         chính sách autoplay), không phát tiếng khi tải trang.
+         Bật/tắt chỉ lưu trên máy này (localStorage), không lưu
+         chung lên server, không gửi PUT khi bấm bật/tắt. */
+      var SOUND_KEY = "lich-ranh-sound";
+      var soundEnabled = true;
+      try { soundEnabled = window.localStorage.getItem(SOUND_KEY) !== "0"; } catch (e) {}
+      var audioCtx = null;
+      function getAudioCtx() {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (typeof AC !== "function") return null;
+        if (!audioCtx) {
+          try { audioCtx = new AC(); } catch (e) { return null; }
+        }
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        return audioCtx;
+      }
+      /* Tiếng "tách" ngắn, nhẹ: sóng sine trượt 1200 -> 700 Hz trong
+         50ms, âm lượng 0.12 rồi tắt dần trong 70ms. */
+      function playClick(force) {
+        if (!force && !soundEnabled) return;
+        var ctx = getAudioCtx();
+        if (!ctx) return;
+        try {
+          var t = ctx.currentTime;
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(1200, t);
+          osc.frequency.exponentialRampToValueAtTime(700, t + 0.05);
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.08);
+        } catch (e) {}
+      }
+      function updateSoundBtn() {
+        var b = document.getElementById("sound-toggle-btn");
+        if (!b) return;
+        var label = document.getElementById("sound-toggle-label");
+        if (label) label.textContent = soundEnabled ? "Âm thanh: Bật" : "Âm thanh: Tắt";
+        b.setAttribute("aria-pressed", soundEnabled ? "true" : "false");
+        b.classList.toggle("sound-off", !soundEnabled);
+      }
+      function toggleSound() {
+        soundEnabled = !soundEnabled;
+        try { window.localStorage.setItem(SOUND_KEY, soundEnabled ? "1" : "0"); } catch (e) {}
+        updateSoundBtn();
+      }
+      /* Bắt sự kiện tập trung: mọi nút (kể cả nút do JS vẽ lại sau này)
+         đều kêu 1 lần khi bấm. Nhãn "Tải ảnh lên" cũng là nút bấm;
+         click giả lập trên input file ẩn bên trong thì bỏ qua để
+         không kêu 2 lần. Nút bật/tắt âm thanh luôn kêu để người bấm
+         nghe được phản hồi cả hai chiều. */
+      document.addEventListener("click", function (e) {
+        if (e.target && e.target.tagName === "INPUT") return;
+        var t = e.target && e.target.closest ? e.target.closest("button, label.btn-accent") : null;
+        if (!t) return;
+        playClick(t.id === "sound-toggle-btn");
+      });
+      document.getElementById("sound-toggle-btn").addEventListener("click", toggleSound);
+      updateSoundBtn();
 
       /* ---------------- Actions (event delegation) ---------------- */
       document.addEventListener("click", function (e) {
