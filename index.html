@@ -188,6 +188,10 @@
         border: 1px solid rgba(255,255,255,0.55);
         box-shadow: 0 10px 24px rgba(108,76,241,0.35), inset 0 1px 0 rgba(255,255,255,0.45);
       }
+      /* Trạng thái điền lịch của tháng: vàng = mới có người điền, xanh = cả nhóm đã điền. */
+      .month-tab.partial { background: rgba(254,215,130,0.9); color: #7c4a03; border-color: rgba(255,255,255,0.7); }
+      .month-tab.full { background: rgba(187,247,208,0.9); color: #14532d; border-color: rgba(255,255,255,0.7); }
+      .month-tab.active.partial, .month-tab.active.full { outline: 2px solid var(--accent); outline-offset: 2px; }
       .collapse-btn {
         font-family: var(--font-display); display: inline-flex; align-items: center; gap: 0.375rem;
         border-radius: 9999px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: 700;
@@ -198,6 +202,11 @@
       }
       .collapse-btn svg { transition: transform 0.3s ease; }
       .collapse-btn.closed svg { transform: rotate(180deg); }
+      .color-swatch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; margin: 0.5rem 0 1rem; }
+      .color-swatch { aspect-ratio: 1; border-radius: 12px; border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 2px 6px rgba(43,35,80,0.15); cursor: pointer; padding: 0; }
+      .color-swatch.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .color-custom-row { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0 0.5rem; }
+      .color-custom-row input[type="color"] { width: 44px; height: 32px; padding: 0; border: 1px solid var(--glass-border); border-radius: 8px; background: none; cursor: pointer; }
       .add-month-btn {
         font-family: var(--font-display); border-radius: 9999px; padding: 0.5rem 1rem;
         font-size: 1rem; font-weight: 700; color: var(--accent);
@@ -206,6 +215,61 @@
         -webkit-backdrop-filter: var(--glass-blur-sm); backdrop-filter: var(--glass-blur-sm);
       }
       .remove-month-link { padding: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--dim); text-decoration: underline dotted; text-underline-offset: 4px; }
+
+      /* ---- Calendar: lịch tháng + tuần của ngày đã chọn ---- */
+      .calendar-card { margin-top: 1.25rem; padding: 1.25rem 1.25rem 1rem; }
+      .cal-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; }
+      .cal-head h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; margin: 0; }
+      .cal-hint { font-size: 0.8125rem; color: var(--dim); }
+      .cal-grid { margin-top: 0.75rem; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+      .cal-dow { text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--dim); padding-bottom: 0.125rem; }
+      .cal-blank { min-height: 2.75rem; }
+      .cal-day {
+        min-height: 2.75rem; border-radius: 14px; padding: 0.25rem 0.125rem;
+        background: rgba(255,255,255,0.5); color: var(--text);
+        border: 1px solid rgba(255,255,255,0.65);
+        -webkit-backdrop-filter: blur(8px) saturate(1.4); backdrop-filter: blur(8px) saturate(1.4);
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+        font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem;
+      }
+      .cal-day .cal-hol { font-size: 0.625rem; font-weight: 600; line-height: 1.1; text-align: center; }
+      .cal-day .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+      .cal-day.today { outline: 2px solid var(--accent); outline-offset: -2px; }
+      .cal-day.selected { background: rgba(108,76,241,0.88); color: #fff; border-color: rgba(255,255,255,0.55); }
+      .cal-day.selected .cal-dot { background: #fff; }
+      .cal-day.hol-tet { background: rgba(255,214,165,0.65); border-color: rgba(255,170,80,0.6); }
+      .cal-day.hol-holiday { background: rgba(255,183,197,0.55); border-color: rgba(255,120,150,0.5); }
+      .cal-day.hol-folk { background: rgba(255,244,191,0.6); border-color: rgba(230,190,60,0.5); }
+      .cal-day.hol-tet.selected, .cal-day.hol-holiday.selected, .cal-day.hol-folk.selected { background: rgba(108,76,241,0.88); color: #fff; }
+
+      /* ---- Tuần của ngày đã chọn (nằm dưới bảng điền) ---- */
+      .week-card { margin-top: 1.25rem; padding: 1.25rem; }
+      .week-card h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; margin: 0 0 0.75rem; }
+      .cal-nav { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.75rem; }
+      .cal-nav-btn { font-family: var(--font-display); font-size: 0.9375rem; font-weight: 700; border-radius: 9999px; padding: 0.5rem 0.875rem; background: rgba(236,231,255,0.55); color: var(--accent); border: 1px solid rgba(255,255,255,0.7); -webkit-backdrop-filter: var(--glass-blur-sm); backdrop-filter: var(--glass-blur-sm); box-shadow: 0 6px 18px rgba(108,76,241,0.12), var(--glass-edge); }
+      .cal-nav-btn:disabled { opacity: 0.4; box-shadow: none; }
+      .week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+      .week-day {
+        border-radius: 16px; padding: 0.625rem 0.5rem; text-align: left;
+        background: rgba(255,255,255,0.5); color: var(--text);
+        border: 1px solid rgba(255,255,255,0.65);
+        -webkit-backdrop-filter: blur(8px) saturate(1.4); backdrop-filter: blur(8px) saturate(1.4);
+        display: flex; flex-direction: column; gap: 2px; min-height: 6rem;
+      }
+      .week-day .wd-name { font-size: 0.75rem; font-weight: 600; color: var(--dim); }
+      .week-day .wd-date { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; }
+      .week-day .wd-hol { font-size: 0.6875rem; font-weight: 700; color: #b3541e; }
+      .week-day .wd-free { font-size: 0.75rem; line-height: 1.45; color: var(--text); word-break: break-word; }
+      .week-day .wd-free.none { color: var(--dim); }
+      .week-day .wd-all { font-size: 0.6875rem; font-weight: 700; color: var(--accent); }
+      .week-day.today { outline: 2px solid var(--accent); outline-offset: -2px; }
+      .week-day.selected { background: rgba(108,76,241,0.88); color: #fff; border-color: rgba(255,255,255,0.55); }
+      .week-day.selected .wd-name, .week-day.selected .wd-free, .week-day.selected .wd-free.none { color: rgba(255,255,255,0.85); }
+      .week-day.selected .wd-hol, .week-day.selected .wd-all { color: #ffe1a8; }
+      .week-day.hol-tet { background: rgba(255,214,165,0.65); }
+      .week-day.hol-holiday { background: rgba(255,183,197,0.55); }
+      .week-day.hol-folk { background: rgba(255,244,191,0.6); }
+      .week-day.hol-tet.selected, .week-day.hol-holiday.selected, .week-day.hol-folk.selected { background: rgba(108,76,241,0.88); }
 
       /* ---- Cards ---- */
       .card {
@@ -295,6 +359,8 @@
       .person-block:last-child { padding-bottom: 0.25rem; }
       .week-grid { margin-top: 0.75rem; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
       .week-grid .day-head { padding-bottom: 0.25rem; text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--dim); }
+      .board-week-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem; }
+      table.grid th .th-date { display: block; font-size: 0.72rem; font-weight: 500; color: var(--dim); }
       .budget-btn-row {
         margin-top: 0.75rem; display: flex; width: 100%; align-items: center; justify-content: space-between;
         border-radius: 16px; padding: 0.625rem 1rem;
@@ -533,6 +599,13 @@
         .collapse-btn, .add-month-btn { grid-column: 1 / -1; justify-content: center; font-size: 0.9375rem; }
         .remove-month-link { grid-column: 1 / -1; text-align: center; padding: 0.25rem; }
 
+        .calendar-card { padding: 1rem 0.875rem 0.875rem; }
+        .cal-grid { gap: 4px; }
+        .cal-day { min-height: 2.5rem; font-size: 0.875rem; border-radius: 10px; }
+        .week-days { grid-template-columns: 1fr; }
+        .week-day { min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 0.125rem 0.5rem; padding: 0.625rem 0.875rem; }
+        .week-day .wd-free, .week-day .wd-all { flex-basis: 100%; }
+
         .card { border-radius: 24px; }
         .board { padding: 0.875rem; }
         .person-name { font-size: 1rem; }
@@ -600,7 +673,7 @@
       </div>
       <div class="splash-card">
         <span class="badge"><span class="dot"></span>Bảng lịch của cả nhóm</span>
-        <h1 class="splash-title">Lịch rảnh <span class="title-accent">trong tuần</span></h1>
+        <h1 class="splash-title">Lằng nhằng <span class="title-accent">không lăng nhăng</span></h1>
         <p class="splash-tagline">Nơi biến dự án ma thành sự thật</p>
         <button type="button" class="splash-enter press" id="enter-main-btn">Vào trang chính</button>
       </div>
@@ -662,7 +735,13 @@
         { solid: "#1faf7a", soft: "#d9f5e7", ink: "#0d7a54" },
         { solid: "#f2b01e", soft: "#fff3cf", ink: "#9a6d05" },
         { solid: "#3d8bff", soft: "#dcecff", ink: "#1c5fc0" },
-        { solid: "#ef5da8", soft: "#ffe0f0", ink: "#b92c77" }
+        { solid: "#ef5da8", soft: "#ffe0f0", ink: "#b92c77" },
+        { solid: "#0ea5b7", soft: "#d8f4f8", ink: "#0b6b78" },
+        { solid: "#e11d48", soft: "#ffe0e7", ink: "#9f1239" },
+        { solid: "#65a30d", soft: "#ecfccb", ink: "#3f6212" },
+        { solid: "#c026d3", soft: "#fae8ff", ink: "#86198f" },
+        { solid: "#b45309", soft: "#fdeed3", ink: "#78350f" },
+        { solid: "#475569", soft: "#e2e8f0", ink: "#1e293b" }
       ];
       var BG_PRESETS = [
         { name: "Tím nhạt", value: "linear-gradient(160deg, #efeaff 0%, #d9ccff 100%)" },
@@ -700,6 +779,208 @@
         state.activeMonth = state.months[0];
       })();
 
+      /* ---------------- Lịch tháng + tuần (xem theo lịch thật) ----------------
+         selectedDay chỉ là góc xem trên máy này, không lưu chung nên bấm
+         ngày không tốn lượt ghi KV. Tháng thì vẫn lưu chung như trước. */
+      var selectedDay = null;
+      var justTappedDay = null; /* ngày vừa bấm: để nút ngày đó nảy anim-pop sau khi vẽ lại */
+      var suppressSave = false; /* bấm ngày chỉ đổi góc xem: bỏ qua 1 lượt lưu */
+
+      /* Ngày lễ, Tết Việt Nam — đã kiểm chứng theo lịch nghỉ chính thức
+         (Thông báo 11483/TB-BNV cho Tết 2027; lịch âm–dương các báo Tuổi Trẻ,
+         thientue.vn). kind: "tet" = Tết, "holiday" = ngày nghỉ lễ,
+         "folk" = ngày lễ dân gian. Phủ tới 4/2028 để thêm tháng sau vẫn có. */
+      var HOLIDAYS = {
+        "2026-11-24": { name: "Ngày Văn hóa Việt Nam", short: "Văn hóa VN", kind: "holiday" },
+        "2027-01-01": { name: "Tết Dương lịch", short: "Tết DL", kind: "holiday" },
+        "2027-01-30": { name: "Ông Công Ông Táo", short: "Ông Táo", kind: "folk" },
+        "2027-02-04": { name: "28 Tết", short: "28 Tết", kind: "tet" },
+        "2027-02-05": { name: "Giao thừa", short: "Giao thừa", kind: "tet" },
+        "2027-02-06": { name: "Mùng 1 Tết", short: "Mùng 1", kind: "tet" },
+        "2027-02-07": { name: "Mùng 2 Tết", short: "Mùng 2", kind: "tet" },
+        "2027-02-08": { name: "Mùng 3 Tết", short: "Mùng 3", kind: "tet" },
+        "2027-02-09": { name: "Mùng 4 Tết", short: "Mùng 4", kind: "tet" },
+        "2027-02-10": { name: "Mùng 5 Tết", short: "Mùng 5", kind: "tet" },
+        "2027-02-20": { name: "Rằm tháng Giêng", short: "Rằm", kind: "folk" },
+        "2027-04-16": { name: "Giỗ Tổ Hùng Vương", short: "Giỗ Tổ", kind: "holiday" },
+        "2027-04-30": { name: "Giải phóng miền Nam", short: "30/4", kind: "holiday" },
+        "2027-05-01": { name: "Quốc tế Lao động", short: "1/5", kind: "holiday" },
+        "2027-06-09": { name: "Tết Đoan Ngọ", short: "Đoan Ngọ", kind: "folk" },
+        "2027-09-02": { name: "Quốc khánh", short: "Quốc khánh", kind: "holiday" },
+        "2027-09-15": { name: "Tết Trung thu", short: "Trung thu", kind: "folk" },
+        "2027-11-24": { name: "Ngày Văn hóa Việt Nam", short: "Văn hóa VN", kind: "holiday" },
+        "2028-01-01": { name: "Tết Dương lịch", short: "Tết DL", kind: "holiday" },
+        "2028-01-19": { name: "Ông Công Ông Táo", short: "Ông Táo", kind: "folk" },
+        "2028-01-25": { name: "Giao thừa", short: "Giao thừa", kind: "tet" },
+        "2028-01-26": { name: "Mùng 1 Tết", short: "Mùng 1", kind: "tet" },
+        "2028-01-27": { name: "Mùng 2 Tết", short: "Mùng 2", kind: "tet" },
+        "2028-01-28": { name: "Mùng 3 Tết", short: "Mùng 3", kind: "tet" },
+        "2028-02-09": { name: "Rằm tháng Giêng", short: "Rằm", kind: "folk" },
+        "2028-04-04": { name: "Giỗ Tổ Hùng Vương", short: "Giỗ Tổ", kind: "holiday" }
+      };
+      function holidayOf(dateKey) { return HOLIDAYS[dateKey] || null; }
+      function dateKeyOf(d) {
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      }
+      function todayKey() { return dateKeyOf(new Date()); }
+      function mondayOf(d) {
+        var m = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        m.setDate(m.getDate() - ((m.getDay() + 6) % 7));
+        return m;
+      }
+      function defaultDayFor(monthKey) {
+        var now = new Date();
+        var cur = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+        if (monthKey === cur) return dateKeyOf(now);
+        return monthKey + "-01";
+      }
+      /* Lịch rảnh lưu theo ngày thật: cells[tháng]["người:YYYY-MM-DD"].
+         Mỗi tuần trong tháng có lịch riêng — đổi tuần là bảng điền đổi theo. */
+      function cellNoteOn(personId, dateKey) {
+        var m = state.cells[dateKey.slice(0, 7)] || {};
+        return m[personId + ":" + dateKey] || "";
+      }
+      function setCellNoteOn(personId, dateKey, note) {
+        var mk = dateKey.slice(0, 7);
+        if (!state.cells[mk]) state.cells[mk] = {};
+        var key = personId + ":" + dateKey;
+        if (note) state.cells[mk][key] = note;
+        else delete state.cells[mk][key];
+      }
+      function weekDatesOf(dateKey) {
+        var d = parseDateKey(dateKey);
+        if (!d) return [];
+        var monday = mondayOf(d);
+        var out = [];
+        for (var i = 0; i < 7; i++) out.push(dateKeyOf(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)));
+        return out;
+      }
+      /* Dữ liệu cũ lưu theo thứ trong tuần ("người:0..6") nên mọi tuần
+         trong tháng đều giống nhau — đó là lỗi anh vừa gặp. Chuyển mỗi
+         ô cũ thành 1 ô ngày thật, rơi vào tuần mặc định của tháng đó
+         (tuần chứa hôm nay nếu là tháng hiện tại, không thì tuần chứa
+         mùng 1). Chỉ đổi trong bộ nhớ; lần lưu chung tiếp theo của
+         người dùng mới ghi dạng mới lên server. */
+      function migrateCellsToDates() {
+        Object.keys(state.cells).forEach(function (mk) {
+          var bucket = state.cells[mk];
+          Object.keys(bucket).forEach(function (ck) {
+            var parts = ck.split(":");
+            if (parts.length !== 2 || !/^[0-6]$/.test(parts[1])) return;
+            var pid = parts[0], wd = Number(parts[1]), note = bucket[ck];
+            delete bucket[ck];
+            var anchor = parseDateKey(defaultDayFor(mk));
+            if (!anchor) return;
+            var monday = mondayOf(anchor);
+            var d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + wd);
+            var dk = dateKeyOf(d), targetMk = dk.slice(0, 7);
+            if (!state.cells[targetMk]) state.cells[targetMk] = {};
+            if (!state.cells[targetMk][pid + ":" + dk]) state.cells[targetMk][pid + ":" + dk] = note;
+          });
+        });
+      }
+      /* Tháng đã có bao nhiêu người điền lịch rảnh: "none" = chưa ai điền,
+         "partial" = mới có vài người, "full" = tất cả mọi người đều đã điền
+         ít nhất 1 ô. Chỉ tính ô lịch rảnh, không tính tiền. */
+      function monthFillStatus(monthKey) {
+        var total = state.people.length;
+        if (total === 0) return { status: "none", filled: 0, total: 0 };
+        var filled = 0;
+        var bucket = state.cells[monthKey] || {};
+        state.people.forEach(function (p) {
+          var prefix = p.id + ":";
+          var has = Object.keys(bucket).some(function (k) { return k.indexOf(prefix) === 0 && bucket[k] !== ""; });
+          if (has) filled++;
+        });
+        if (filled === 0) return { status: "none", filled: 0, total: total };
+        return { status: filled === total ? "full" : "partial", filled: filled, total: total };
+      }
+      function weekLabel(monday) {
+        var end = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+        var s = monday.getDate() + "/" + (monday.getMonth() + 1);
+        var e = end.getDate() + "/" + (end.getMonth() + 1) + "/" + end.getFullYear();
+        if (monday.getFullYear() !== end.getFullYear()) s += "/" + monday.getFullYear();
+        return s + " – " + e;
+      }
+      function calendarHTML() {
+        var parts = state.activeMonth.split("-");
+        var y = Number(parts[0]), mo = Number(parts[1]);
+        var lead = ((new Date(y, mo - 1, 1).getDay()) + 6) % 7; /* Thứ 2 = 0 */
+        var daysInMonth = new Date(y, mo, 0).getDate();
+        var today = todayKey();
+        var html = '<section class="card card-soft calendar-card" aria-label="Lịch tháng ' + monthLabel(state.activeMonth) + '">';
+        html += '<div class="cal-head"><h2>Lịch ' + monthLabel(state.activeMonth) + '</h2><span class="cal-hint">Bấm vào ngày để xem tuần đó</span></div>';
+        html += '<div class="cal-grid">';
+        DAYS_SHORT.forEach(function (s) { html += '<span class="cal-dow">' + s + "</span>"; });
+        var i;
+        for (i = 0; i < lead; i++) html += '<span class="cal-blank"></span>';
+        for (var d = 1; d <= daysInMonth; d++) {
+          var key = state.activeMonth + "-" + String(d).padStart(2, "0");
+          var wd = ((new Date(y, mo - 1, d).getDay()) + 6) % 7;
+          var hol = holidayOf(key);
+          var hasNote = state.people.some(function (p) { return cellNoteOn(p.id, key) !== ""; });
+          var cls = "cal-day press";
+          if (key === today) cls += " today";
+          if (key === selectedDay) cls += " selected";
+          if (key === justTappedDay) cls += " anim-pop";
+          if (hol) cls += " hol-" + hol.kind;
+          html += '<button type="button" class="' + cls + '" data-action="day" data-date="' + key + '" aria-label="' + DAYS[wd] + ", ngày " + d + (hol ? ", " + esc(hol.name) : "") + '"><span class="cal-num">' + d + "</span>";
+          if (hol) html += '<span class="cal-hol">' + esc(hol.short) + "</span>";
+          else if (hasNote) html += '<span class="cal-dot"></span>';
+          html += "</button>";
+        }
+        var trail = (7 - ((lead + daysInMonth) % 7)) % 7;
+        for (i = 0; i < trail; i++) html += '<span class="cal-blank"></span>';
+        html += "</div>";
+        /* Chuyển tháng ngay ở cuối lịch, khỏi cuộn lên đầu trang. */
+        var mi = state.months.indexOf(state.activeMonth);
+        var prevLbl = mi > 0 ? monthLabel(state.months[mi - 1]) : "Tháng trước";
+        var nextLbl = (mi >= 0 && mi < state.months.length - 1) ? monthLabel(state.months[mi + 1]) : "Tháng sau";
+        html += '<div class="cal-nav">' +
+          '<button type="button" class="cal-nav-btn press" data-action="cal-prev"' + (mi <= 0 ? " disabled" : "") + ">‹ " + prevLbl + "</button>" +
+          '<button type="button" class="cal-nav-btn press" data-action="cal-next"' + (mi < 0 || mi >= state.months.length - 1 ? " disabled" : "") + ">" + nextLbl + " ›</button>" +
+          "</div></section>";
+        return html;
+      }
+      function weekHTML() {
+        if (!selectedDay) return "";
+        var sel = parseDateKey(selectedDay);
+        if (!sel) return "";
+        var monday = mondayOf(sel);
+        var today = todayKey();
+        var html = '<section class="card card-soft week-card" aria-label="Tuần của ngày đã chọn">';
+        html += "<h2>Tuần " + weekLabel(monday) + "</h2>";
+        html += '<div class="week-days">';
+        for (var i = 0; i < 7; i++) {
+          var d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+          var key = dateKeyOf(d);
+          var wd = (d.getDay() + 6) % 7;
+          var hol = holidayOf(key);
+          var free = state.people.map(function (p) {
+            return { person: p, note: cellNoteOn(p.id, key) };
+          }).filter(function (x) { return x.note !== ""; });
+          var cls = "week-day press";
+          if (key === selectedDay) cls += " selected";
+          if (key === justTappedDay) cls += " anim-pop";
+          if (key === today) cls += " today";
+          if (hol) cls += " hol-" + hol.kind;
+          if (state.people.length > 0 && free.length === state.people.length) cls += " all-free";
+          html += '<button type="button" class="' + cls + '" data-action="day" data-date="' + key + '" aria-label="' + DAYS[wd] + ", ngày " + d.getDate() + "/" + (d.getMonth() + 1) + (hol ? ", " + esc(hol.name) : "") + '">';
+          html += '<span class="wd-name">' + DAYS_SHORT[wd] + "</span>";
+          html += '<span class="wd-date">' + d.getDate() + "/" + (d.getMonth() + 1) + "</span>";
+          if (hol) html += '<span class="wd-hol">' + esc(hol.name) + "</span>";
+          if (free.length === 0) {
+            html += '<span class="wd-free none">Chưa ai rảnh</span>';
+          } else {
+            html += '<span class="wd-free">' + free.map(function (x) { return esc(x.person.name) + ": " + esc(x.note); }).join("<br>") + "</span>";
+          }
+          if (state.people.length > 0 && free.length === state.people.length) html += '<span class="wd-all">Cả nhóm rảnh</span>';
+          html += "</button>";
+        }
+        html += "</div></section>";
+        return html;
+      }
+
       /* ---------------- Helpers ---------------- */
       function esc(s) {
         return String(s == null ? "" : s)
@@ -707,6 +988,24 @@
           .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
       }
       function paletteFor(i) { return PALETTE[i % PALETTE.length]; }
+      /* Màu riêng của từng người: person.color là mã hex (vd "#ff6a3d").
+         Chưa chọn thì dùng màu mặc định theo vị trí trong bảng. */
+      function mixColor(hex, target, t) {
+        function ch(s, i) { return parseInt(s.substr(i, 2), 16); }
+        var h = hex.replace("#", ""), g = target.replace("#", "");
+        var r = Math.round(ch(h, 0) + (ch(g, 0) - ch(h, 0)) * t);
+        var gg = Math.round(ch(h, 2) + (ch(g, 2) - ch(h, 2)) * t);
+        var b = Math.round(ch(h, 4) + (ch(g, 4) - ch(h, 4)) * t);
+        function hx(n) { var s = n.toString(16); return s.length === 1 ? "0" + s : s; }
+        return "#" + hx(r) + hx(gg) + hx(b);
+      }
+      function colorFor(person, idx) {
+        if (person && typeof person.color === "string" && /^#[0-9a-fA-F]{6}$/.test(person.color)) {
+          var solid = person.color.toLowerCase();
+          return { solid: solid, soft: mixColor(solid, "#ffffff", 0.85), ink: mixColor(solid, "#000000", 0.45) };
+        }
+        return paletteFor(idx);
+      }
       function monthLabel(key) {
         var parts = key.split("-");
         return Number(parts[1]) + "/" + parts[0];
@@ -733,10 +1032,6 @@
         for (var i = 0; i < state.people.length; i++) if (state.people[i].id === id) return state.people[i];
         return null;
       }
-      function cellNote(personId, day) {
-        var m = state.cells[state.activeMonth] || {};
-        return m[personId + ":" + day] || "";
-      }
       function budgetOf(personId) {
         var m = state.budgets[state.activeMonth] || {};
         return Object.prototype.hasOwnProperty.call(m, personId) ? m[personId] : null;
@@ -748,7 +1043,7 @@
       var ICON_CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>';
 
       function avatarHTML(person, idx, sizeClass) {
-        var color = paletteFor(idx);
+        var color = colorFor(person, idx);
         if (person.avatar) {
           return '<img class="avatar ' + sizeClass + '" src="' + person.avatar + '" alt="" />';
         }
@@ -763,20 +1058,27 @@
           '<button type="button" class="icon-btn press" data-action="remove-person" data-id="' + person.id + '" aria-label="Xoá ' + esc(person.name) + ' khỏi bảng">' + ICON_TRASH + "</button>" +
           "</div>";
       }
-      function dayCellHTML(person, idx, day, compact) {
-        var note = cellNote(person.id, day);
-        var color = paletteFor(idx);
-        var label = esc(person.name) + ", " + DAYS[day] + (note ? ": " + esc(note) : ": chưa điền");
+      function dayCellHTML(person, idx, dateKey, compact) {
+        var note = cellNoteOn(person.id, dateKey);
+        var color = colorFor(person, idx);
+        var d = parseDateKey(dateKey);
+        var wd = d ? (d.getDay() + 6) % 7 : 0;
+        var label = esc(person.name) + ", " + DAYS[wd] + " " + (d ? d.getDate() + "/" + (d.getMonth() + 1) : "") + (note ? ": " + esc(note) : ": chưa điền");
         if (note) {
-          return '<button type="button" class="day-cell press' + (compact ? " compact" : "") + '" style="background-color:' + color.soft + ";color:" + color.ink + '" data-action="cell" data-id="' + person.id + '" data-day="' + day + '" aria-label="' + label + '"><span>' + esc(note) + "</span></button>";
+          return '<button type="button" class="day-cell press' + (compact ? " compact" : "") + '" style="background-color:' + color.soft + ";color:" + color.ink + '" data-action="cell" data-id="' + person.id + '" data-date="' + dateKey + '" aria-label="' + label + '"><span>' + esc(note) + "</span></button>";
         }
-        return '<button type="button" class="day-cell empty press' + (compact ? " compact" : "") + '" data-action="cell" data-id="' + person.id + '" data-day="' + day + '" aria-label="' + label + '"><span>+</span></button>';
+        return '<button type="button" class="day-cell empty press' + (compact ? " compact" : "") + '" data-action="cell" data-id="' + person.id + '" data-date="' + dateKey + '" aria-label="' + label + '"><span>+</span></button>';
       }
 
       /* ---------------- Board rendering ---------------- */
       function renderBoard() {
         var root = document.getElementById("app");
         var html = "";
+        /* Ngày đã chọn luôn thuộc tháng đang xem; đổi tháng thì chọn lại
+           (tháng hiện tại thì chọn hôm nay, tháng khác thì chọn mùng 1). */
+        if (!selectedDay || !state.activeMonth || selectedDay.slice(0, 7) !== state.activeMonth) {
+          selectedDay = state.activeMonth ? defaultDayFor(state.activeMonth) : null;
+        }
 
         /* Month tabs */
         html += '<div class="month-row">';
@@ -784,7 +1086,12 @@
           ? state.months.filter(function (k) { return k === state.activeMonth; })
           : state.months;
         visibleMonths.forEach(function (key) {
-          html += '<button type="button" class="month-tab press' + (key === state.activeMonth ? " active" : "") + '" data-action="month" data-month="' + key + '" aria-pressed="' + (key === state.activeMonth) + '">' + monthLabel(key) + "</button>";
+          var fill = monthFillStatus(key);
+          var tabCls = "month-tab press" + (key === state.activeMonth ? " active" : "") +
+            (fill.status === "partial" ? " partial" : fill.status === "full" ? " full" : "");
+          var tabTitle = fill.status === "full" ? "Cả " + fill.total + " người đã điền lịch tháng này"
+            : fill.status === "partial" ? "Đã có " + fill.filled + "/" + fill.total + " người điền lịch tháng này" : "";
+          html += '<button type="button" class="' + tabCls + '" data-action="month" data-month="' + key + '" aria-pressed="' + (key === state.activeMonth) + '"' + (tabTitle ? ' title="' + tabTitle + '"' : "") + ">" + monthLabel(key) + "</button>";
         });
         if (state.months.length > 1) {
           html += '<button type="button" class="collapse-btn press' + (state.monthsCollapsed ? " closed" : "") + '" data-action="collapse" aria-expanded="' + (!state.monthsCollapsed) + '">' +
@@ -802,25 +1109,34 @@
           html += '<div class="card card-soft empty-box"><p class="big">Chưa có tháng nào</p><p>Thêm tháng đầu tiên để cả nhóm bắt đầu điền lịch rảnh.</p></div>';
           root.innerHTML = html;
           scheduleSave();
+          justTappedDay = null;
           return;
         }
 
         html += '<div class="anim-month" key="' + state.activeMonth + '">';
+        html += calendarHTML();
 
-        /* Board card */
-        html += '<section class="card board" aria-label="Bảng lịch rảnh ' + monthLabel(state.activeMonth) + '">';
+        /* Board card: bảng điền là của TUẦN đang chọn (selectedDay),
+           mỗi tuần có lịch riêng. */
+        var week = weekDatesOf(selectedDay);
+        var weekMonday = mondayOf(parseDateKey(selectedDay));
+        html += '<section class="card board" aria-label="Bảng lịch rảnh tuần ' + weekLabel(weekMonday) + '">';
+        html += '<h2 class="board-week-title">Tuần ' + weekLabel(weekMonday) + "</h2>";
         if (state.people.length === 0) {
           html += '<div class="empty-box" style="margin-top:0"><p class="big">Chưa có ai trong bảng</p><p>Thêm người đầu tiên để bắt đầu điền lịch.</p></div>';
         } else {
-          /* Desktop */
+          /* Desktop: 7 cột là 7 ngày thật của tuần đang chọn. */
           html += '<div class="board-desktop"><table class="grid"><thead><tr><th class="name-col">Tên</th>';
-          DAYS.forEach(function (d) { html += "<th>" + d + "</th>"; });
+          week.forEach(function (dk) {
+            var dd = parseDateKey(dk);
+            html += "<th>" + DAYS[(dd.getDay() + 6) % 7] + '<span class="th-date">' + dd.getDate() + "/" + (dd.getMonth() + 1) + "</span></th>";
+          });
           html += '<th class="budget-col">Tiền</th></tr></thead><tbody>';
           state.people.forEach(function (person, idx) {
             var budget = budgetOf(person.id);
             html += "<tr>";
             html += '<td><div class="person-cell">' + personNameHTML(person, idx) + "</div></td>";
-            for (var day = 0; day < 7; day++) html += "<td>" + dayCellHTML(person, idx, day, false) + "</td>";
+            week.forEach(function (dk) { html += "<td>" + dayCellHTML(person, idx, dk, false) + "</td>"; });
             html += "<td>" + (budget != null
               ? '<button type="button" class="budget-btn filled press" data-action="budget" data-id="' + person.id + '" aria-label="Tiền của ' + esc(person.name) + '">' + formatMoney(budget) + "</button>"
               : '<button type="button" class="budget-btn unfilled press" data-action="budget" data-id="' + person.id + '" aria-label="Tiền của ' + esc(person.name) + '">+ Điền</button>') + "</td>";
@@ -834,8 +1150,11 @@
             var budget = budgetOf(person.id);
             html += '<div class="person-block">' + personNameHTML(person, idx);
             html += '<div class="week-grid">';
-            DAYS_SHORT.forEach(function (s) { html += '<span class="day-head">' + s + "</span>"; });
-            for (var day = 0; day < 7; day++) html += dayCellHTML(person, idx, day, true);
+            week.forEach(function (dk) {
+              var dd = parseDateKey(dk);
+              html += '<span class="day-head">' + DAYS_SHORT[(dd.getDay() + 6) % 7] + "<br>" + dd.getDate() + "/" + (dd.getMonth() + 1) + "</span>";
+            });
+            week.forEach(function (dk) { html += dayCellHTML(person, idx, dk, true); });
             html += "</div>";
             html += '<button type="button" class="budget-btn-row press ' + (budget != null ? "filled" : "unfilled") + '" data-action="budget" data-id="' + person.id + '" aria-label="Tiền của ' + esc(person.name) + '"><span>Tiền</span><span>' + (budget != null ? formatMoney(budget) : "+ Điền") + "</span></button>";
             html += "</div>";
@@ -844,6 +1163,7 @@
         }
         html += '<button type="button" class="add-person-btn press" data-action="add-person">+ Thêm người</button>';
         html += "</section>";
+        html += weekHTML();
 
         /* Summary cards */
         html += '<div class="summary-grid">';
@@ -852,10 +1172,10 @@
         if (shared.length === 0) {
           html += '<p class="dim-text">' + (state.people.length < 2
             ? "Cần ít nhất 2 người trong bảng để tìm ngày rảnh chung."
-            : "Chưa có ngày nào cả nhóm cùng rảnh trong tháng này. Mọi người điền thêm giờ rảnh là thấy ngay.") + "</p>";
+            : "Chưa có ngày nào cả nhóm cùng rảnh trong tuần này. Mọi người điền thêm giờ rảnh là thấy ngay.") + "</p>";
         } else {
           shared.forEach(function (item) {
-            html += '<div class="shared-day anim-pop"><p class="day-name">' + DAYS[item.day] + '</p><p class="notes">' +
+            html += '<div class="shared-day anim-pop"><p class="day-name">' + esc(formatDateKey(item.dateKey)) + '</p><p class="notes">' +
               item.notes.map(function (n) { return esc(n.person.name) + ": " + esc(n.note); }).join(" · ") + "</p></div>";
           });
         }
@@ -876,22 +1196,24 @@
         }
         html += "</section></div>";
 
-        html += '<p class="hint">Bấm vào ô ngày để ghi giờ rảnh (ví dụ: 19h–22h, cả ngày), ô nào bận thì để trống. Bấm vào vòng tròn cạnh tên để đổi ảnh của mình.</p>';
+        html += '<p class="hint">Mỗi tuần có lịch riêng: bấm một ngày trên lịch tháng để đổi tuần, rồi điền giờ rảnh cho từng ngày trong tuần đó (ví dụ: 19h–22h, cả ngày), ô nào bận thì để trống. Bấm vào ảnh của mình để đổi ảnh và màu. Thẻ tháng màu vàng là mới có người điền lịch, màu xanh là cả nhóm đã điền đủ.</p>';
         html += "</div>";
 
         root.innerHTML = html;
         scheduleSave();
+        justTappedDay = null;
       }
 
+      /* Ngày cả nhóm cùng rảnh — chỉ tính trong TUẦN đang chọn. */
       function sharedDays() {
-        if (state.people.length < 2) return [];
+        if (state.people.length < 2 || !selectedDay) return [];
         var result = [];
-        for (var day = 0; day < 7; day++) {
+        weekDatesOf(selectedDay).forEach(function (dk) {
           var notes = state.people.map(function (person) {
-            return { person: person, note: cellNote(person.id, day) };
+            return { person: person, note: cellNoteOn(person.id, dk) };
           });
-          if (notes.every(function (n) { return n.note !== ""; })) result.push({ day: day, notes: notes });
-        }
+          if (notes.every(function (n) { return n.note !== ""; })) result.push({ dateKey: dk, notes: notes });
+        });
         return result;
       }
 
@@ -1026,6 +1348,7 @@
           ? remote.activeMonth : (remote.months[0] || null);
         state.monthsCollapsed = !!remote.monthsCollapsed;
         state.cells = remote.cells || {};
+        migrateCellsToDates(); /* dữ liệu cũ (theo thứ) -> theo ngày thật */
         state.budgets = remote.budgets || {};
         state.events = remote.events || [];
         state.background = validBackground(remote.background) || { mode: "default", value: null };
@@ -1074,7 +1397,7 @@
       }
 
       function scheduleSave() {
-        if (!SYNC_ENABLED || !initialLoadDone || applyingRemote) return;
+        if (!SYNC_ENABLED || !initialLoadDone || applyingRemote || suppressSave) return;
         savePending = true;
         setSyncStatus("syncing", "Đang lưu…");
         if (saveTimer) clearTimeout(saveTimer);
@@ -1144,14 +1467,14 @@
         if (el) el.innerHTML = errorHTML();
       }
 
-      function openCellDialog(person, day) {
+      function openCellDialog(person, dateKey) {
         formError = null;
-        var note = cellNote(person.id, day);
+        var note = cellNoteOn(person.id, dateKey);
         var quick = QUICK_NOTES.map(function (q) {
           return '<button type="button" class="quick-chip press" data-quick="' + esc(q) + '">' + esc(q) + "</button>";
         }).join("");
-        openDialog(person.name + " · " + DAYS[day],
-          '<label class="field-label" for="cell-note">Giờ rảnh (' + monthLabel(state.activeMonth) + ')</label>' +
+        openDialog(person.name + " · " + formatDateKey(dateKey),
+          '<label class="field-label" for="cell-note">Giờ rảnh — ' + formatDateKey(dateKey) + '</label>' +
           '<input id="cell-note" class="field" type="text" value="' + esc(note) + '" placeholder="Ví dụ: 19h–22h hoặc Cả ngày" />' +
           '<div class="quick-row">' + quick + "</div>" +
           '<div class="form-error-slot">' + errorHTML() + "</div>" +
@@ -1168,20 +1491,14 @@
         document.getElementById("dlg-cancel").addEventListener("click", closeDialog);
         document.getElementById("dlg-save").addEventListener("click", function () {
           var val = document.getElementById("cell-note").value.trim();
-          setCellNote(person.id, day, val);
+          setCellNoteOn(person.id, dateKey, val);
           closeDialog(); renderBoard();
         });
         var clearBtn = document.getElementById("dlg-clear");
         if (clearBtn) clearBtn.addEventListener("click", function () {
-          setCellNote(person.id, day, "");
+          setCellNoteOn(person.id, dateKey, "");
           closeDialog(); renderBoard();
         });
-      }
-      function setCellNote(personId, day, note) {
-        if (!state.cells[state.activeMonth]) state.cells[state.activeMonth] = {};
-        var key = personId + ":" + day;
-        if (note) state.cells[state.activeMonth][key] = note;
-        else delete state.cells[state.activeMonth][key];
       }
 
       function openBudgetDialog(person) {
@@ -1304,7 +1621,7 @@
         var picks = state.people.map(function (person, idx) {
           var active = person.id === selectedId;
           return '<button type="button" class="person-pick press' + (active ? " active" : "") + '" data-pick="' + person.id + '"' +
-            (active ? ' style="background-color:' + paletteFor(idx).solid + '"' : "") + ">" + esc(person.name) + "</button>";
+            (active ? ' style="background-color:' + colorFor(person, idx).solid + '"' : "") + ">" + esc(person.name) + "</button>";
         }).join("");
         openDialog("Muốn đi đâu — " + event.title,
           '<p class="field-label">Người gợi ý</p>' +
@@ -1323,7 +1640,7 @@
               var pIdx = state.people.findIndex(function (p) { return p.id === pid; });
               if (pid === selectedId) {
                 b.classList.add("active");
-                b.style.backgroundColor = paletteFor(pIdx).solid;
+                b.style.backgroundColor = colorFor(state.people[pIdx], pIdx).solid;
               } else {
                 b.classList.remove("active");
                 b.style.backgroundColor = "";
@@ -1347,11 +1664,21 @@
       function openAvatarDialog(person, idx) {
         formError = null;
         avatarDraft = null;
-        openDialog("Ảnh của " + person.name,
+        var curColor = colorFor(person, idx);
+        var colorSwatches = PALETTE.map(function (p) {
+          var sel = p.solid.toLowerCase() === curColor.solid.toLowerCase();
+          return '<button type="button" class="color-swatch press' + (sel ? " selected" : "") + '" data-color="' + p.solid + '" style="background:' + p.solid + '" aria-label="Màu ' + p.solid + '" title="' + p.solid + '"></button>';
+        }).join("");
+        openDialog("Ảnh và màu của " + person.name,
           '<div class="avatar-center"><span id="avatar-preview">' + avatarHTML(person, idx, "avatar-96") + "</span>" +
           "<p>Chọn một ảnh từ máy của bạn. Ảnh được cắt vuông ở giữa và thu nhỏ lại, rồi hiện cạnh tên của bạn ở khắp bảng.</p>" +
           '<label class="btn-accent press">Chọn ảnh từ máy' +
           '<input id="avatar-file" class="sr-only" type="file" accept="image/*" aria-label="Chọn ảnh cho ' + esc(person.name) + '" /></label></div>' +
+          '<p class="field-label" style="margin-top:1rem">Màu của bạn</p>' +
+          '<div class="color-swatch-grid">' + colorSwatches + "</div>" +
+          '<div class="color-custom-row"><label class="field-label" for="color-custom" style="margin:0">Màu riêng</label>' +
+          '<input id="color-custom" type="color" value="' + curColor.solid + '" aria-label="Chọn màu riêng" />' +
+          '<button type="button" class="btn-delete-text" id="dlg-default-color"' + (person.color ? "" : ' style="display:none"') + '>Về màu mặc định</button></div>' +
           '<div class="form-error-slot"></div>' +
           '<div class="dialog-actions">' +
           (person.avatar ? '<button type="button" class="btn-delete-text" id="dlg-clear">Xoá ảnh</button>' : "") +
@@ -1371,6 +1698,48 @@
           }).catch(function () {
             setError("Chưa đọc được ảnh này, bạn thử chọn ảnh khác nhé.");
           });
+        });
+        /* Màu: chọn là đổi ngay (ảnh thì vẫn bấm Lưu ảnh mới đổi). */
+        function refreshAvatarPreview() {
+          var pv = document.getElementById("avatar-preview");
+          if (!pv) return;
+          if (avatarDraft) {
+            pv.innerHTML = '<img class="avatar avatar-96 anim-pop" src="' + avatarDraft + '" alt="Ảnh mới của ' + esc(person.name) + '" />';
+          } else {
+            pv.innerHTML = avatarHTML(person, idx, "avatar-96");
+            var av = pv.querySelector(".avatar-96");
+            if (av) av.classList.add("anim-pop");
+          }
+        }
+        dialogRoot.querySelectorAll("[data-color]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            person.color = btn.getAttribute("data-color");
+            refreshAvatarPreview();
+            dialogRoot.querySelectorAll("[data-color]").forEach(function (b) {
+              b.classList.toggle("selected", b.getAttribute("data-color").toLowerCase() === person.color.toLowerCase());
+            });
+            var db = document.getElementById("dlg-default-color");
+            if (db) db.style.display = "";
+            renderBoard();
+          });
+        });
+        document.getElementById("color-custom").addEventListener("change", function (e) {
+          person.color = e.target.value;
+          refreshAvatarPreview();
+          dialogRoot.querySelectorAll("[data-color]").forEach(function (b) { b.classList.remove("selected"); });
+          var db2 = document.getElementById("dlg-default-color");
+          if (db2) db2.style.display = "";
+          renderBoard();
+        });
+        var defColorBtn = document.getElementById("dlg-default-color");
+        if (defColorBtn) defColorBtn.addEventListener("click", function () {
+          delete person.color;
+          refreshAvatarPreview();
+          dialogRoot.querySelectorAll("[data-color]").forEach(function (b) {
+            b.classList.toggle("selected", b.getAttribute("data-color").toLowerCase() === colorFor(person, idx).solid.toLowerCase());
+          });
+          defColorBtn.style.display = "none";
+          renderBoard();
         });
         document.getElementById("dlg-cancel").addEventListener("click", closeDialog);
         document.getElementById("dlg-save").addEventListener("click", function () {
@@ -1559,11 +1928,44 @@
         var id = Number(btn.getAttribute("data-id") || 0);
 
         if (action === "month") {
-          state.activeMonth = btn.getAttribute("data-month");
+          var newMonth = btn.getAttribute("data-month");
+          if (newMonth !== state.activeMonth) {
+            state.activeMonth = newMonth;
+            selectedDay = defaultDayFor(state.activeMonth);
+          }
+          state.monthsCollapsed = true; /* bấm tháng nào thì thu gọn các tháng lại */
           renderBoard();
+        } else if (action === "day") {
+          var dateStr = btn.getAttribute("data-date");
+          var dd = parseDateKey(dateStr);
+          if (dd) {
+            var mk = dateStr.slice(0, 7);
+            if (mk !== state.activeMonth && state.months.indexOf(mk) !== -1) {
+              state.activeMonth = mk;
+              state.monthsCollapsed = true;
+              selectedDay = dateStr;
+              justTappedDay = dateStr;
+              renderBoard();
+            } else {
+              selectedDay = dateStr;
+              justTappedDay = dateStr;
+              suppressSave = true; /* chỉ đổi ngày đang xem: không lưu chung */
+              renderBoard();
+              suppressSave = false;
+            }
+          }
         } else if (action === "collapse") {
           state.monthsCollapsed = !state.monthsCollapsed;
           renderBoard();
+        } else if (action === "cal-prev" || action === "cal-next") {
+          var ci = state.months.indexOf(state.activeMonth);
+          var ni = action === "cal-next" ? ci + 1 : ci - 1;
+          if (ni >= 0 && ni < state.months.length) {
+            state.activeMonth = state.months[ni];
+            selectedDay = defaultDayFor(state.activeMonth);
+            state.monthsCollapsed = true;
+            renderBoard();
+          }
         } else if (action === "add-month") {
           openMonthDialog();
         } else if (action === "remove-month") {
@@ -1577,7 +1979,7 @@
           });
         } else if (action === "cell") {
           var person = personById(id);
-          if (person) openCellDialog(person, Number(btn.getAttribute("data-day")));
+          if (person) openCellDialog(person, btn.getAttribute("data-date"));
         } else if (action === "budget") {
           var bp = personById(id);
           if (bp) openBudgetDialog(bp);
