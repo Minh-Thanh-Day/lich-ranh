@@ -78,6 +78,12 @@
       /* ---- Background photo + pastel wash ---- */
       .bg-wrap { position: fixed; inset: 0; z-index: 0; }
       .bg-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+      /* Nền chỉ hiện khi đã biết nền đúng: lúc mới tải, body mang class
+         bg-loading nên ảnh nền ẩn (opacity 0), khỏi hiện nền mặc định cũ
+         rồi mới đổi sang nền mới như trước. Khi state chung tải xong thì
+         gỡ class này, ảnh nền đúng mờ dần vào. */
+      .bg-wrap img, .splash-bg img { transition: opacity .6s ease; }
+      body.bg-loading .bg-wrap img, body.bg-loading .splash-bg img { opacity: 0; }
       .bg-wash {
         position: absolute; inset: 0;
         /* Nhạt hơn bản gốc để ảnh nhóm lộ ra sau lớp kính (kính cần nền để khúc xạ) */
@@ -817,7 +823,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="bg-loading">
     <div class="splash" id="splash" role="dialog" aria-modal="true" aria-label="Giới thiệu">
       <div class="splash-bg" aria-hidden="true">
         <img id="splash-bg-img" alt="" />
@@ -2619,6 +2625,9 @@
         syncSplashBackground(); /* nền chung mới tải về cũng hiện lên màn chào */
         renderAll();
         initialLoadDone = true;
+        /* Đã biết nền đúng (mới nhất từ server) thì mới cho ảnh nền hiện ra,
+           mờ dần vào — không còn cảnh nền cũ hiện trước rồi mới đổi nền mới. */
+        document.body.classList.remove("bg-loading");
       });
       setInterval(pollServer, 30000);
       document.addEventListener("visibilitychange", function () {
