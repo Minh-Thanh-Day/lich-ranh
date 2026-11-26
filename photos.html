@@ -247,6 +247,8 @@
       .tile:hover .tile-name, .tile:focus-visible .tile-name { opacity: 1; }
       @media (hover: none) { .tile .tile-name { opacity: 1; } }
       .tile:active { transform: scale(0.97); }
+      .tile .tile-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: rgba(20, 14, 48, 0.55); color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.25); pointer-events: none; }
+      .tile .tile-badge { position: absolute; top: 8px; right: 8px; padding: 3px 8px; border-radius: 999px; background: rgba(20, 14, 48, 0.65); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; pointer-events: none; }
       .skeleton {
         border-radius: 18px; aspect-ratio: 1 / 1; background: var(--accent-soft);
         animation: pulse 1.2s ease-in-out infinite;
@@ -279,6 +281,11 @@
         width: 100%; height: 100%; object-fit: contain; display: block;
         border-radius: 14px;
       }
+      .lb-imgwrap video {
+        width: 100%; height: 100%; object-fit: contain; display: none;
+        border-radius: 14px; background: #000;
+      }
+      .lightbox.is-video .lb-zoom { display: none; }
       .lb-ui {
         position: absolute; inset: 0; pointer-events: none;
         opacity: 0; transition: opacity .3s;
@@ -417,16 +424,16 @@
       </div>
 
       <h1>Ảnh nhóm <span class="accent">Lăng nhăng</span></h1>
-      <p class="lede" id="lede">Ảnh đi chơi, ảnh dìm, ảnh đẹp của cả nhóm — tải lên đây là lưu thẳng vào thư mục Drive của nhóm, ai có link cũng xem và tải về được.</p>
+      <p class="lede" id="lede">Ảnh và video đi chơi, ảnh dìm, ảnh đẹp của cả nhóm — tải lên đây là lưu thẳng vào thư mục Drive của nhóm, ai có link cũng xem và tải về được.</p>
 
-      <section class="upload-card glass" aria-label="Tải ảnh lên">
+      <section class="upload-card glass" aria-label="Tải ảnh hoặc video lên">
         <!-- Lucian UX/UI #432 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#432 -->
         <div class="ux u432" id="uploader">
-          <div class="u432-dz" id="dropZone" tabindex="0" role="button" aria-label="Tải ảnh lên">
+          <div class="u432-dz" id="dropZone" tabindex="0" role="button" aria-label="Tải ảnh hoặc video lên">
             <div class="u432-idle">
               <span class="u432-ar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V5M7 9.5 12 4.5l5 5"/><path d="M5 15v2.5A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5V15"/></svg></span>
-              <b>Thả ảnh vào đây</b><b aria-hidden="true">Thả ra để tải lên</b>
-              <small>hoặc <button type="button" class="u432-br" id="pickBtn" tabindex="-1">chọn ảnh</button> · nhiều ảnh cùng lúc</small>
+              <b>Thả ảnh hoặc video vào đây</b><b aria-hidden="true">Thả ra để tải lên</b>
+              <small>hoặc <button type="button" class="u432-br" id="pickBtn" tabindex="-1">chọn ảnh hoặc video</button> · nhiều file cùng lúc · video dưới 25MB</small>
             </div>
             <div class="u432-up" aria-hidden="true">
               <div class="u432-st">
@@ -436,7 +443,7 @@
               </div>
               <p class="u432-nm" id="u432Name"></p>
             </div>
-            <input class="u432-file" type="file" id="fileInput" accept="image/*" multiple tabindex="-1" aria-hidden="true" />
+            <input class="u432-file" type="file" id="fileInput" accept="image/*,video/*" multiple tabindex="-1" aria-hidden="true" />
           </div>
           <p class="u432-live" id="u432Live" role="status"></p>
         </div>
@@ -461,18 +468,18 @@
       <div class="grid" id="grid" aria-live="polite"></div>
     </div>
 
-    <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Xem ảnh lớn">
+    <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Xem ảnh hoặc video">
       <div class="lb-scrim" id="lbScrim" aria-hidden="true"></div>
       <div class="lb-view" id="lbView">
-        <div class="lb-imgwrap" id="lbImgWrap"><img id="lbImg" alt="" /></div>
+        <div class="lb-imgwrap" id="lbImgWrap"><img id="lbImg" alt="" /><video id="lbVideo" controls playsinline preload="metadata"></video></div>
       </div>
       <div class="lb-ui" id="lbUi">
         <span class="lb-zoom">2× zoom</span>
         <button class="close-btn" id="lbClose" type="button" aria-label="Đóng">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
-        <button class="lb-nav prev" id="lbPrev" type="button" aria-label="Ảnh trước">‹</button>
-        <button class="lb-nav next" id="lbNext" type="button" aria-label="Ảnh sau">›</button>
+        <button class="lb-nav prev" id="lbPrev" type="button" aria-label="Trước">‹</button>
+        <button class="lb-nav next" id="lbNext" type="button" aria-label="Sau">›</button>
         <div class="lb-panel glass">
           <div class="lb-meta">
             <div class="lb-name" id="lbName"></div>
@@ -643,8 +650,8 @@
       function showEmpty() {
         showState(
           '<div class="state-card glass">' +
-            "<h3>Chưa có ảnh nào</h3>" +
-            "<p>Tải ảnh đầu tiên lên cho cả nhóm xem nhé — ảnh sẽ lưu vào thư mục Drive “Ảnh nhóm Lăng nhăng”.</p>" +
+            "<h3>Chưa có ảnh hay video nào</h3>" +
+            "<p>Tải ảnh hoặc video đầu tiên lên cho cả nhóm xem nhé — file sẽ lưu vào thư mục Drive “Ảnh nhóm Lăng nhăng”. Video dưới 25MB nhé.</p>" +
           "</div>"
         );
       }
@@ -681,21 +688,38 @@
       function renderGrid() {
         showState("");
         grid.innerHTML = "";
-        countLabel.textContent = files.length ? files.length + " ảnh" : "";
+        var ni = 0, nv = 0;
+        files.forEach(function (f) { if (f.kind === "video" || (f.mimeType || "").indexOf("video/") === 0) nv++; else ni++; });
+        var parts = [];
+        if (ni) parts.push(ni + " ảnh");
+        if (nv) parts.push(nv + " video");
+        countLabel.textContent = parts.join(" · ");
         if (!files.length) { showEmpty(); return; }
         files.forEach(function (f, i) {
+          var vid = (f.kind === "video" || (f.mimeType || "").indexOf("video/") === 0);
           var btn = document.createElement("button");
           btn.type = "button";
-          btn.className = "tile";
-          btn.setAttribute("aria-label", "Xem ảnh " + (f.name || ""));
+          btn.className = "tile" + (vid ? " is-video" : "");
+          btn.setAttribute("aria-label", (vid ? "Xem video " : "Xem ảnh ") + (f.name || ""));
           var img = document.createElement("img");
           img.src = f.thumb;
-          img.alt = f.name || "Ảnh nhóm";
+          img.alt = f.name || (vid ? "Video nhóm" : "Ảnh nhóm");
           img.loading = "lazy";
+          btn.appendChild(img);
+          if (vid) {
+            var play = document.createElement("span");
+            play.className = "tile-play";
+            play.setAttribute("aria-hidden", "true");
+            play.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>';
+            btn.appendChild(play);
+            var badge = document.createElement("span");
+            badge.className = "tile-badge";
+            badge.textContent = "VIDEO";
+            btn.appendChild(badge);
+          }
           var cap = document.createElement("span");
           cap.className = "tile-name";
           cap.textContent = f.name || "";
-          btn.appendChild(img);
           btn.appendChild(cap);
           btn.addEventListener("click", function () { pop(); openLightbox(i); });
           grid.appendChild(btn);
@@ -708,6 +732,7 @@
       var lbScrim = document.getElementById("lbScrim");
       var lbCount = document.getElementById("lbCount");
       var lbClose = document.getElementById("lbClose");
+      var lbVideo = document.getElementById("lbVideo");
       var lbRm = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
       var lbOpen = false, lbClosing = false, lbZ = 1, lbTx = 0, lbTy = 0;
       function lbRectOf(i) {
@@ -716,10 +741,30 @@
         var r = t.getBoundingClientRect();
         return { l: r.left, t: r.top, w: r.width, h: r.height };
       }
+      function isVideo(i) {
+        var f = files[i];
+        return !!(f && (f.kind === "video" || (f.mimeType || "").indexOf("video/") === 0));
+      }
       function setLbMeta(i) {
         var f = files[i];
-        lbImg.src = f.view;
-        lbImg.alt = f.name || "Ảnh nhóm";
+        var vid = isVideo(i);
+        /* Dung video cu truoc khi doi, tranh phat chong. */
+        lbVideo.pause();
+        lbVideo.removeAttribute("src");
+        if (vid) {
+          lbImg.removeAttribute("src");
+          lbImg.style.display = "none";
+          lbVideo.style.display = "block";
+          lbVideo.poster = f.thumb;
+          lbVideo.src = f.play || f.download;
+          try { var pr = lbVideo.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
+        } else {
+          lbVideo.style.display = "none";
+          lbImg.style.display = "block";
+          lbImg.src = f.view;
+          lbImg.alt = f.name || "Ảnh nhóm";
+        }
+        lightbox.classList.toggle("is-video", vid);
         lbName.textContent = f.name || "Ảnh nhóm";
         var sub = fmtDate(f.createdTime);
         var sz = fmtSize(f.size);
@@ -728,6 +773,7 @@
         lbDownload.href = f.download;
       }
       function lbSetZoom(nz, ox, oy) {
+        if (isVideo(current)) { lbZ = 1; lbTx = 0; lbTy = 0; lbImgWrap.style.transform = ""; lightbox.classList.remove("is-zoom"); return; }
         var W = lbView.clientWidth, H = lbView.clientHeight;
         if (nz > 1) { lbTx = Math.min(0, Math.max(W - W * nz, ox - (ox - lbTx) * nz / lbZ)); lbTy = Math.min(0, Math.max(H - H * nz, oy - (oy - lbTy) * nz / lbZ)); }
         else { lbTx = 0; lbTy = 0; }
@@ -776,6 +822,8 @@
           lbScrim.style.opacity = "";
           lightbox.hidden = true;
           lbImg.removeAttribute("src");
+          lbVideo.pause();
+          lbVideo.removeAttribute("src");
           document.body.style.overflow = "";
           current = -1;
           var tile = grid.children[i];
@@ -798,7 +846,7 @@
       }
       function updateDeleteBtn() {
         lbDelete.classList.toggle("confirm", deleteArmed);
-        lbDeleteLabel.textContent = deleteArmed ? "Chắc chắn xóa?" : "Xóa ảnh";
+        lbDeleteLabel.textContent = deleteArmed ? "Chắc chắn xóa?" : (isVideo(current) ? "Xóa video" : "Xóa ảnh");
       }
       lbClose.addEventListener("click", function () { pop(); closeLightbox(); });
       document.getElementById("lbPrev").addEventListener("click", function () { pop(); go(-1); });
@@ -812,6 +860,7 @@
         else if (e.key === "ArrowRight") go(1);
       });
       lbView.addEventListener("dblclick", function (e) {
+        if (isVideo(current)) return;
         if (e.target.closest("button")) return;
         var r = lbView.getBoundingClientRect(), k = lbView.clientWidth / (r.width || 1);
         lbImgWrap.classList.remove("now");
@@ -819,6 +868,7 @@
       });
       lbView.addEventListener("wheel", function (e) {
         if (!lbOpen) return;
+        if (isVideo(current)) return;
         e.preventDefault();
         var r = lbView.getBoundingClientRect(), k = lbView.clientWidth / (r.width || 1);
         lbImgWrap.classList.add("now");
@@ -827,6 +877,7 @@
       var lbSx = 0, lbSy = 0, lbOx = 0, lbOy = 0, lbMode = "";
       lbView.addEventListener("pointerdown", function (e) {
         if (!lbOpen) return;
+        if (isVideo(current)) return;
         lbSx = e.clientX; lbSy = e.clientY; lbOx = lbTx; lbOy = lbTy; lbMode = "wait";
         if (lbView.setPointerCapture) lbView.setPointerCapture(e.pointerId);
       });
@@ -992,6 +1043,12 @@
 
       /* Ảnh lớn thì thu nhỏ còn tối đa 2048px (JPEG) cho nhẹ; ảnh nhỏ giữ nguyên. */
       function prepareFile(file) {
+        /* Video: gửi nguyên bản (không nén được như ảnh). */
+        if (file.type.indexOf("video/") === 0 || /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(file.name)) {
+          return readAsBase64(file).then(function (b64) {
+            return { name: file.name, mimeType: file.type || "video/mp4", data: b64 };
+          }, function () { return null; });
+        }
         var MAX = 2048;
         var KEEP = 4 * 1024 * 1024;
         return new Promise(function (resolve) {
@@ -1060,10 +1117,20 @@
 
       function handleFiles(fileList) {
         if (uploading) { toast("Đang tải dở, chờ xong đã nhé."); return; }
+        var VIDEO_MAX = 25 * 1024 * 1024;
+        var tooBig = [];
         var list = Array.prototype.slice.call(fileList).filter(function (f) {
-          return f.type.indexOf("image/") === 0 || /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(f.name);
+          var isVid = f.type.indexOf("video/") === 0 || /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(f.name);
+          var isImg = f.type.indexOf("image/") === 0 || /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(f.name);
+          if (isVid && f.size > VIDEO_MAX) { tooBig.push(f.name); return false; }
+          return isImg || isVid;
         });
-        if (!list.length) { toast("Chưa thấy file ảnh nào trong số đã chọn.", "err"); return; }
+        if (!list.length) {
+          if (tooBig.length) toast("Video \u201c" + tooBig[0] + "\u201d nặng quá 25MB nên chưa tải được. Cắt ngắn hoặc nén lại rồi thử nhé.", "err");
+          else toast("Chưa thấy file ảnh hay video nào trong số đã chọn.", "err");
+          return;
+        }
+        if (tooBig.length) toast("Video \u201c" + tooBig.join("\u201d, \u201c") + "\u201d nặng quá 25MB nên bỏ qua.", "err");
         uploading = true;
         pickBtn.disabled = true;
         uploadStart(list[0].name);
@@ -1090,8 +1157,8 @@
           uploading = false;
           pickBtn.disabled = false;
           uploadFinish(okCount === list.length);
-          if (okCount === list.length) toast("Đã tải lên " + okCount + " ảnh vào Drive của nhóm.", "ok");
-          else if (okCount > 0) toast("Tải được " + okCount + "/" + list.length + " ảnh. Mấy ảnh còn lại thử lại nhé.", "err");
+          if (okCount === list.length) toast("Đã tải lên " + okCount + " file vào Drive của nhóm.", "ok");
+          else if (okCount > 0) toast("Tải được " + okCount + "/" + list.length + " file. Mấy file còn lại thử lại nhé.", "err");
           else toast("Chưa tải lên được. Kiểm tra mạng rồi thử lại nhé.", "err");
           loadList();
         });
