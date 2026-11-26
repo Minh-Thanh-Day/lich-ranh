@@ -15,7 +15,7 @@
     <style>
       :root {
         color-scheme: light;
-        --bg-grad: linear-gradient(180deg, #f2effc 0%, #efe9fb 50%, #f6f0ff 100%);
+        --bg: #f2effc;
         --text: #2b2350;
         --dim: #7a7396;
         --accent: #6c4cf1;
@@ -39,11 +39,26 @@
         --border: #e6e0f7;
         --font-display: "Baloo 2", "Be Vietnam Pro", system-ui, sans-serif;
         --font-body: "Be Vietnam Pro", system-ui, sans-serif;
+        /* Lucian UX/UI #432 — token map sang tông của trang. */
+        --ux-ease: cubic-bezier(.2,.8,.2,1);
+        --ux-ink: var(--text);
+        --ux-ink-2: var(--dim);
+        --ux-ink-3: var(--dim);
+        --ux-line: var(--border);
+        --ux-line-2: var(--border);
+        --ux-accent: var(--accent);
+        --ux-accent-soft: var(--accent-soft);
+        --ux-surface: var(--surface);
+        --ux-surface-2: var(--accent-soft);
+        --ux-surface-3: var(--border);
+        --ux-mint: var(--green);
+        --ux-danger: var(--danger);
+        --ux-shadow-strong: rgba(43, 35, 80, .3);
       }
       @media (prefers-color-scheme: dark) {
         :root {
           color-scheme: dark;
-          --bg-grad: linear-gradient(180deg, #171233 0%, #1d1745 50%, #241a52 100%);
+          --bg: #171233;
           --text: #efeaff;
           --dim: #a79fd0;
           --accent: #a68fff;
@@ -61,6 +76,7 @@
           --glass-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 2px 10px rgba(0, 0, 0, 0.3);
           --surface: #241d4d;
           --border: #3a3170;
+          --ux-shadow-strong: rgba(0, 0, 0, .5);
         }
       }
       * { box-sizing: border-box; }
@@ -68,8 +84,7 @@
       body {
         font-family: var(--font-body);
         color: var(--text);
-        background: var(--bg-grad);
-        background-attachment: fixed;
+        background: var(--bg);
         min-height: 100vh;
         -webkit-font-smoothing: antialiased;
       }
@@ -82,7 +97,8 @@
         border: 1px solid var(--glass-border);
         box-shadow: var(--glass-edge), var(--glass-shadow);
       }
-      .wrap { max-width: 1060px; margin: 0 auto; padding: 0 16px 64px; }
+      #aurora { position: fixed; inset: -8%; width: 116%; height: 116%; z-index: 0; filter: blur(24px) saturate(1.15); pointer-events: none; }
+      .wrap { position: relative; z-index: 1; max-width: 1060px; margin: 0 auto; padding: 0 16px 64px; }
 
       /* Top row */
       .topbar {
@@ -110,40 +126,64 @@
         margin: 10px 4px 4px;
       }
       h1 .accent { color: var(--accent); }
+      /* Chu nhay theo chuot — Lucian UX/UI #205 "Text ripple" (MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#205).
+         Chu gan chuot nay len tren lo xo rieng, mau chuyen dan sang accent; chu trong .accent giu mau accent lam nen. */
+      .u205-l { position: relative; display: inline-block; color: color-mix(in oklab, var(--ux-accent) calc(var(--t, 0) * 100%), var(--ux-ink)); transform: translateY(var(--y, 0px)) scaleY(var(--sy, 1)); transform-origin: 50% 100%; will-change: transform; }
+      .u205-l.in-accent { --ux-ink: var(--accent); }
       .lede { margin: 0 4px 18px; color: var(--dim); font-size: 15px; line-height: 1.55; max-width: 620px; }
 
       /* Upload card */
       .upload-card { border-radius: 26px; padding: 18px; margin-bottom: 22px; }
-      .drop-zone {
-        border: 2px dashed var(--border);
-        border-radius: 20px;
-        padding: 26px 18px;
-        text-align: center;
-        transition: border-color 0.15s ease, background 0.15s ease;
-      }
-      .drop-zone.dragging { border-color: var(--accent); background: var(--accent-soft); }
-      .drop-zone .dz-icon { color: var(--accent); margin-bottom: 8px; }
-      .drop-zone p { margin: 0 0 14px; color: var(--dim); font-size: 15px; }
-      .cta-btn {
-        display: inline-flex; align-items: center; gap: 8px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.30), rgba(255,255,255,0) 50%), var(--cta);
-        color: var(--cta-ink); border: none; border-radius: 999px;
-        font-size: 16px; font-weight: 700; padding: 12px 26px; cursor: pointer;
-        box-shadow: 0 10px 24px rgba(255, 106, 61, 0.35);
-      }
-      .cta-btn:active { transform: scale(0.97); }
-      .cta-btn:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
-      .dz-note { margin: 14px auto 0; font-size: 13px; color: var(--dim); max-width: 520px; line-height: 1.55; }
-      .upload-status { margin-top: 14px; display: none; }
-      .upload-status.show { display: block; }
-      .upload-status .bar {
-        height: 10px; border-radius: 999px; background: var(--accent-soft); overflow: hidden;
-      }
-      .upload-status .bar > div {
-        height: 100%; width: 0%; border-radius: 999px; background: var(--accent);
-        transition: width 0.3s ease;
-      }
-      .upload-status .txt { margin-top: 8px; font-size: 14px; font-weight: 600; }
+      /* Lucian UX/UI #432 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#432
+         Dropzone tải ảnh: kéo thả thì viền sáng lên, thả ra thì tài liệu rơi xuống,
+         vòng tròn chạy theo tiến độ thật, xong thì dấu tick xanh nảy ra. */
+      .u432 { position: relative; width: 100%; display: grid; place-items: center; }
+      .u432-dz { position: relative; width: 100%; max-width: 520px; height: 228px; border-radius: 22px; display: grid; place-items: center; background: color-mix(in srgb, var(--ux-ink) 2.5%, transparent); cursor: pointer; transform: scale(var(--k, 1)); transition: background-color .25s var(--ux-ease), transform .5s cubic-bezier(.3,1.5,.5,1); }
+      .u432-dz::before { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1.5px dashed var(--ux-line-2); transition: border-color .25s var(--ux-ease); }
+      .u432-dz:hover::before { border-color: color-mix(in srgb, var(--ux-ink) 30%, transparent); }
+      .u432.is-drag .u432-dz { --k: 1.03; background: var(--ux-accent-soft); }
+      .u432.is-drag .u432-dz::before { border-style: solid; border-color: var(--ux-accent); }
+      .u432 .u432-dz:focus-visible { outline: 2px solid var(--ux-accent); outline-offset: 3px; }
+      .u432-idle, .u432-up { grid-area: 1/1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+      .u432-idle { transition: opacity .25s var(--ux-ease), transform .45s cubic-bezier(.3,1.5,.5,1); }
+      .u432.is-up .u432-idle { opacity: 0; transform: scale(.85); pointer-events: none; }
+      .u432-ar { width: 58px; height: 58px; margin-bottom: 14px; border-radius: 18px; display: grid; place-items: center; background: var(--ux-surface); background: light-dark(var(--ux-surface), var(--ux-surface-2)); box-shadow: 0 0 0 1px var(--ux-line), 0 10px 22px -12px var(--ux-shadow-strong); color: var(--ux-ink-2); animation: u432-bob 2.6s ease-in-out infinite; transition: color .2s, transform .4s cubic-bezier(.3,1.6,.5,1); }
+      .u432-ar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      @keyframes u432-bob { 50% { transform: translateY(-5px); } }
+      .u432.is-drag .u432-ar { color: var(--ux-accent); animation: none; transform: translateY(-8px) scale(1.08); }
+      .u432-idle b { font-size: 14.5px; font-weight: 650; letter-spacing: -.015em; }
+      .u432-idle b + b { display: none; color: var(--ux-accent); }
+      .u432.is-drag .u432-idle b:first-of-type { display: none; }
+      .u432.is-drag .u432-idle b + b { display: block; }
+      .u432-idle small { margin-top: 5px; font-size: 12px; color: var(--ux-ink-3); }
+      .u432-br { padding: 0; border: 0; background: none; font-weight: 650; color: var(--ux-accent); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--ux-accent) 40%, transparent); }
+      .u432-br:disabled { opacity: .55; cursor: default; }
+      .u432-up { opacity: 0; pointer-events: none; }
+      .u432.is-up .u432-up { opacity: 1; }
+      .u432.is-out .u432-up { opacity: 0; transform: translateY(10px) scale(.94); transition: opacity .3s var(--ux-ease), transform .35s var(--ux-ease); }
+      .u432-st { position: relative; width: 112px; height: 112px; display: grid; place-items: center; }
+      .u432-ring { position: absolute; inset: 0; width: 112px; height: 112px; transform: rotate(-90deg); }
+      .u432-ring circle { fill: none; stroke-width: 4; stroke-linecap: round; }
+      .u432-ring .tk { stroke: var(--ux-line); }
+      .u432-ring .pg { stroke: var(--ux-accent); stroke-dasharray: 289; stroke-dashoffset: 289; transition: stroke .3s var(--ux-ease), stroke-dashoffset .5s var(--ux-ease); }
+      .u432.is-done .u432-ring .pg { stroke: var(--ux-mint); }
+      .u432-doc { width: 50px; height: 62px; overflow: visible; }
+      .u432.is-up .u432-doc { animation: u432-drop .75s cubic-bezier(.3,1.2,.5,1) both; }
+      @keyframes u432-drop { 0% { transform: translateY(-150px) rotate(-14deg); opacity: 0; } 45% { transform: translateY(4px) rotate(2deg) scale(1.06,.9); opacity: 1; } 65% { transform: translateY(-3px) scale(.98,1.03); } 100% { transform: none; } }
+      .u432-doc .pp { fill: var(--ux-surface); fill: light-dark(var(--ux-surface), var(--ux-surface-3)); stroke: var(--ux-line-2); stroke-width: 1.4; }
+      .u432-doc .fd { fill: var(--ux-surface-3); fill: light-dark(var(--ux-surface-3), var(--ux-line-2)); }
+      .u432-doc .ln { fill: var(--ux-line-2); }
+      .u432-doc .tg { fill: var(--c, #E5484D); }
+      .u432-doc text { font: 800 8.5px/1 system-ui, sans-serif; fill: #fff; letter-spacing: .02em; }
+      .u432-ok { position: absolute; right: 18px; bottom: 16px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--ux-mint); color: var(--ux-surface); box-shadow: 0 0 0 3px var(--ux-surface), 0 6px 14px -6px var(--ux-mint); opacity: 0; transform: scale(.2); }
+      .u432-ok svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .u432.is-done .u432-ok { opacity: 1; transform: none; transition: opacity .15s, transform .55s cubic-bezier(.3,1.9,.5,1); }
+      .u432-nm { margin-top: 12px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .u432-nm small { font-weight: 500; color: var(--ux-ink-3); }
+      .u432.is-err .u432-nm small { color: var(--ux-danger); }
+      .u432-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+      .u432-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+      .dz-note { margin: 14px auto 0; font-size: 13px; color: var(--dim); max-width: 520px; line-height: 1.55; text-align: center; }
 
       /* Gallery head */
       .gallery-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 4px 12px; }
@@ -187,11 +227,14 @@
         .grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
       }
       .tile {
-        position: relative; border: none; padding: 0; cursor: pointer;
+        position: relative; padding: 0; cursor: pointer;
         border-radius: 18px; overflow: hidden; aspect-ratio: 1 / 1;
-        background: var(--accent-soft);
-        box-shadow: 0 6px 18px rgba(43, 35, 80, 0.10);
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-edge), 0 10px 28px rgba(43, 35, 80, 0.14), 0 2px 8px rgba(43, 35, 80, 0.06);
+        transition: opacity .2s;
       }
+      .tile.away { opacity: 0; }
       .tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .tile .tile-name {
         position: absolute; left: 0; right: 0; bottom: 0;
@@ -210,21 +253,45 @@
       }
       @keyframes pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 
-      /* Lightbox */
+      /* Trinh xem anh — Lucian UX/UI #061 "Thumbnail-to-lightbox zoom" (MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#061).
+         Bam anh trong luoi: khung anh phong to tu dung o anh do ra toan man hinh (morph 520ms), vuot ngang de sang anh khac,
+         keo xuong de dong, bam dup / lan chuot de phong to 1–3x roi keo xem. Nut Tai ve / Xoa anh giu nguyen. */
       .lightbox {
         position: fixed; inset: 0; z-index: 60;
-        background: rgba(16, 11, 38, 0.88);
-        -webkit-backdrop-filter: blur(10px);
-        backdrop-filter: blur(10px);
-        display: flex; flex-direction: column;
-        padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
       }
       .lightbox[hidden] { display: none; }
-      .lb-stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; position: relative; }
-      .lb-stage img {
-        max-width: 100%; max-height: 100%; object-fit: contain;
-        border-radius: 14px; box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      .lb-scrim {
+        position: absolute; inset: 0; background: #07070C;
+        opacity: 0; pointer-events: none; transition: opacity .45s;
       }
+      .lightbox.is-open .lb-scrim { opacity: var(--lb-so, 1); pointer-events: auto; }
+      .lb-view {
+        position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+        overflow: hidden; visibility: hidden; touch-action: none;
+      }
+      .lightbox.is-open .lb-view { visibility: visible; }
+      .lb-imgwrap {
+        position: absolute; inset: 0; transform-origin: 0 0;
+        transition: transform .45s cubic-bezier(.2,.8,.2,1);
+      }
+      .lb-imgwrap.now { transition: none; }
+      .lb-imgwrap img {
+        width: 100%; height: 100%; object-fit: contain; display: block;
+        border-radius: 14px;
+      }
+      .lb-ui {
+        position: absolute; inset: 0; pointer-events: none;
+        opacity: 0; transition: opacity .3s;
+      }
+      .lightbox.is-open.is-ready .lb-ui { opacity: 1; }
+      .lb-ui button, .lb-ui a { pointer-events: auto; }
+      .lb-zoom {
+        position: absolute; left: 50%; top: max(16px, env(safe-area-inset-top)); transform: translateX(-50%);
+        height: 28px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center;
+        background: rgba(0,0,0,.4); color: #fff; font-size: 12px; font-weight: 800;
+        opacity: 0; transition: opacity .3s;
+      }
+      .lightbox.is-zoom .lb-zoom { opacity: 1; }
       .lb-nav {
         position: absolute; top: 50%; transform: translateY(-50%);
         width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
@@ -234,12 +301,18 @@
       .lb-nav:active { transform: translateY(-50%) scale(0.92); }
       .lb-nav.prev { left: 2px; } .lb-nav.next { right: 2px; }
       .lb-panel {
-        margin-top: 12px; border-radius: 20px; padding: 14px 16px;
+        position: absolute; left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom));
+        border-radius: 20px; padding: 14px 16px; pointer-events: auto;
         display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
       }
       .lb-meta { flex: 1; min-width: 180px; }
       .lb-name { font-weight: 700; font-size: 16px; word-break: break-all; }
       .lb-sub { color: var(--dim); font-size: 13px; margin-top: 2px; }
+      .lb-count {
+        font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums;
+        padding: 5px 9px; border-radius: 999px; background: rgba(0,0,0,.35); color: #fff;
+        white-space: nowrap;
+      }
       .dl-btn {
         display: inline-flex; align-items: center; gap: 8px;
         background: linear-gradient(180deg, rgba(255,255,255,0.30), rgba(255,255,255,0) 50%), var(--cta);
@@ -286,6 +359,50 @@
     </style>
   </head>
   <body>
+    <canvas id="aurora" width="96" height="96"></canvas>
+    <script>
+      /* Aurora (nen pastel troi, giong trang chinh) - chi troi tu nhien, khong theo chuot. */
+      (function () {
+        var cv = document.getElementById("aurora");
+        if (!cv) return;
+        var cx = cv.getContext("2d");
+        if (!cx) return;
+        var rm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var darkMq = window.matchMedia("(prefers-color-scheme: dark)");
+        var S = 96;
+        var PAL = ["#ffd9c7", "#d9ccff", "#c9f2dd", "#ffd6e8", "#cfe8ff"];
+        var PAL_DARK = ["#6b3a5a", "#4a3a8f", "#2a6a4a", "#8f3a6a", "#3a5a8f"];
+        function rgb(h) { var n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+        var col = PAL.map(rgb), colDark = PAL_DARK.map(rgb);
+        var B = [0, 1, 2, 3, 4].map(function (i) { return { bx: 0.15 + (i * 0.37) % 0.7, by: 0.2 + (i * 0.53) % 0.6, r: 0.34 + (i % 3) * 0.07, ph: i * 1.7, sp: 0.16 + i * 0.025 }; });
+        function draw(t) {
+          cx.clearRect(0, 0, S, S);
+          cx.globalCompositeOperation = "lighter";
+          var dark = darkMq.matches;
+          var cols = dark ? colDark : col;
+          var al = dark ? .5 : .55;
+          B.forEach(function (b, i) {
+            var x = b.bx + Math.sin(t * b.sp + b.ph) * 0.18, y = b.by + Math.cos(t * b.sp * 0.8 + b.ph * 1.3) * 0.16;
+            var c = cols[i], g = cx.createRadialGradient(x * S, y * S, 0, x * S, y * S, b.r * S);
+            g.addColorStop(0, "rgba(" + c.join(",") + "," + al + ")");
+            g.addColorStop(1, "rgba(" + c.join(",") + ",0)");
+            cx.fillStyle = g; cx.fillRect(0, 0, S, S);
+          });
+        }
+        var vis = true, raf = 0, last = 0, t = 0;
+        function frame(now) {
+          raf = 0;
+          if (!cv.isConnected || !vis || document.hidden) return;
+          var dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now; t += dt;
+          draw(t);
+          raf = requestAnimationFrame(frame);
+        }
+        function run() { if (rm) { draw(2); return; } if (!raf && vis && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+        document.addEventListener("visibilitychange", function () { if (!document.hidden) run(); });
+        if ("IntersectionObserver" in window) new IntersectionObserver(function (es) { vis = es[0].isIntersecting; run(); }).observe(cv);
+        run();
+      })();
+    </script>
     <div class="wrap">
       <div class="topbar">
         <a class="back-btn" href="https://lich-ranh.pages.dev/" aria-label="Quay lại trang Lịch rảnh">
@@ -303,22 +420,27 @@
       <p class="lede" id="lede">Ảnh đi chơi, ảnh dìm, ảnh đẹp của cả nhóm — tải lên đây là lưu thẳng vào thư mục Drive của nhóm, ai có link cũng xem và tải về được.</p>
 
       <section class="upload-card glass" aria-label="Tải ảnh lên">
-        <div class="drop-zone" id="dropZone">
-          <div class="dz-icon">
-            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>
+        <!-- Lucian UX/UI #432 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#432 -->
+        <div class="ux u432" id="uploader">
+          <div class="u432-dz" id="dropZone" tabindex="0" role="button" aria-label="Tải ảnh lên">
+            <div class="u432-idle">
+              <span class="u432-ar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V5M7 9.5 12 4.5l5 5"/><path d="M5 15v2.5A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5V15"/></svg></span>
+              <b>Thả ảnh vào đây</b><b aria-hidden="true">Thả ra để tải lên</b>
+              <small>hoặc <button type="button" class="u432-br" id="pickBtn" tabindex="-1">chọn ảnh</button> · nhiều ảnh cùng lúc</small>
+            </div>
+            <div class="u432-up" aria-hidden="true">
+              <div class="u432-st">
+                <svg class="u432-ring" viewBox="0 0 100 100"><circle class="tk" cx="50" cy="50" r="46"/><circle class="pg" id="u432RingPg" cx="50" cy="50" r="46"/></svg>
+                <svg class="u432-doc" viewBox="0 0 50 62"><path class="pp" d="M6 1h26l15 15v39a6 6 0 0 1-6 6H6a6 6 0 0 1-6-6V7a6 6 0 0 1 6-6z"/><path class="fd" d="M32 1v10a5 5 0 0 0 5 5h10z"/><rect class="ln" x="9" y="22" width="24" height="3" rx="1.5"/><rect class="ln" x="9" y="29" width="30" height="3" rx="1.5"/><rect class="tg" id="u432DocTag" x="-4" y="40" width="28" height="14" rx="3.5"/><text id="u432DocTagText" x="10" y="50" text-anchor="middle">JPG</text></svg>
+                <span class="u432-ok"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+              </div>
+              <p class="u432-nm" id="u432Name"></p>
+            </div>
+            <input class="u432-file" type="file" id="fileInput" accept="image/*" multiple tabindex="-1" aria-hidden="true" />
           </div>
-          <p>Kéo thả ảnh vào đây, hoặc</p>
-          <button class="cta-btn" id="pickBtn" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/></svg>
-            Chọn ảnh tải lên
-          </button>
-          <p class="dz-note">Ảnh sẽ nằm trong thư mục Drive “Ảnh nhóm Lăng nhăng”. Chọn một lúc nhiều ảnh cũng được.</p>
-          <input type="file" id="fileInput" accept="image/*" multiple hidden />
+          <p class="u432-live" id="u432Live" role="status"></p>
         </div>
-        <div class="upload-status" id="uploadStatus" role="status">
-          <div class="bar"><div id="uploadBarFill"></div></div>
-          <div class="txt" id="uploadText">Đang tải…</div>
-        </div>
+        <p class="dz-note">Ảnh sẽ nằm trong thư mục Drive “Ảnh nhóm Lăng nhăng”. Chọn một lúc nhiều ảnh cũng được.</p>
       </section>
 
       <div class="gallery-head">
@@ -340,27 +462,32 @@
     </div>
 
     <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Xem ảnh lớn">
-      <button class="close-btn" id="lbClose" type="button" aria-label="Đóng">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
-      <div class="lb-stage">
-        <button class="lb-nav prev" id="lbPrev" type="button" aria-label="Ảnh trước">‹</button>
-        <img id="lbImg" alt="" />
-        <button class="lb-nav next" id="lbNext" type="button" aria-label="Ảnh sau">›</button>
+      <div class="lb-scrim" id="lbScrim" aria-hidden="true"></div>
+      <div class="lb-view" id="lbView">
+        <div class="lb-imgwrap" id="lbImgWrap"><img id="lbImg" alt="" /></div>
       </div>
-      <div class="lb-panel glass">
-        <div class="lb-meta">
-          <div class="lb-name" id="lbName"></div>
-          <div class="lb-sub" id="lbSub"></div>
-        </div>
-        <a class="dl-btn" id="lbDownload" href="#" target="_blank" rel="noopener">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="m6 10 6 6 6-6"/><path d="M4 20h16"/></svg>
-          Tải về
-        </a>
-        <button class="del-btn" id="lbDelete" type="button">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-          <span id="lbDeleteLabel">Xóa ảnh</span>
+      <div class="lb-ui" id="lbUi">
+        <span class="lb-zoom">2× zoom</span>
+        <button class="close-btn" id="lbClose" type="button" aria-label="Đóng">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
+        <button class="lb-nav prev" id="lbPrev" type="button" aria-label="Ảnh trước">‹</button>
+        <button class="lb-nav next" id="lbNext" type="button" aria-label="Ảnh sau">›</button>
+        <div class="lb-panel glass">
+          <div class="lb-meta">
+            <div class="lb-name" id="lbName"></div>
+            <div class="lb-sub" id="lbSub"></div>
+          </div>
+          <span class="lb-count" id="lbCount"></span>
+          <a class="dl-btn" id="lbDownload" href="#" target="_blank" rel="noopener">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="m6 10 6 6 6-6"/><path d="M4 20h16"/></svg>
+            Tải về
+          </a>
+          <button class="del-btn" id="lbDelete" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            <span id="lbDeleteLabel">Xóa ảnh</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -392,9 +519,12 @@
       var pickBtn = document.getElementById("pickBtn");
       var fileInput = document.getElementById("fileInput");
       var dropZone = document.getElementById("dropZone");
-      var uploadStatus = document.getElementById("uploadStatus");
-      var uploadBarFill = document.getElementById("uploadBarFill");
-      var uploadText = document.getElementById("uploadText");
+      var uploader = document.getElementById("uploader");
+      var u432RingPg = document.getElementById("u432RingPg");
+      var u432DocTag = document.getElementById("u432DocTag");
+      var u432DocTagText = document.getElementById("u432DocTagText");
+      var u432Name = document.getElementById("u432Name");
+      var u432Live = document.getElementById("u432Live");
       var lightbox = document.getElementById("lightbox");
       var lbImg = document.getElementById("lbImg");
       var lbName = document.getElementById("lbName");
@@ -572,12 +702,21 @@
         });
       }
 
-      /* ---------- Lightbox ---------- */
-      function openLightbox(i) {
-        if (i < 0 || i >= files.length) return;
-        current = i;
-        deleteArmed = false;
-        updateDeleteBtn();
+      /* ---------- Trình xem ảnh (Lucian #061, đã đổi tên class/function cho khớp trang) ---------- */
+      var lbView = document.getElementById("lbView");
+      var lbImgWrap = document.getElementById("lbImgWrap");
+      var lbScrim = document.getElementById("lbScrim");
+      var lbCount = document.getElementById("lbCount");
+      var lbClose = document.getElementById("lbClose");
+      var lbRm = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+      var lbOpen = false, lbClosing = false, lbZ = 1, lbTx = 0, lbTy = 0;
+      function lbRectOf(i) {
+        var t = grid.children[i];
+        if (!t) return { l: 0, t: 0, w: window.innerWidth, h: window.innerHeight };
+        var r = t.getBoundingClientRect();
+        return { l: r.left, t: r.top, w: r.width, h: r.height };
+      }
+      function setLbMeta(i) {
         var f = files[i];
         lbImg.src = f.view;
         lbImg.alt = f.name || "Ảnh nhóm";
@@ -585,35 +724,150 @@
         var sub = fmtDate(f.createdTime);
         var sz = fmtSize(f.size);
         lbSub.textContent = [sub, sz].filter(Boolean).join(" · ");
+        lbCount.textContent = (i + 1) + " / " + files.length;
         lbDownload.href = f.download;
+      }
+      function lbSetZoom(nz, ox, oy) {
+        var W = lbView.clientWidth, H = lbView.clientHeight;
+        if (nz > 1) { lbTx = Math.min(0, Math.max(W - W * nz, ox - (ox - lbTx) * nz / lbZ)); lbTy = Math.min(0, Math.max(H - H * nz, oy - (oy - lbTy) * nz / lbZ)); }
+        else { lbTx = 0; lbTy = 0; }
+        lbZ = nz;
+        lbImgWrap.style.transform = "translate(" + lbTx + "px," + lbTy + "px) scale(" + lbZ + ")";
+        lightbox.classList.toggle("is-zoom", lbZ > 1);
+      }
+      function lbMorph(from, to, done) {
+        var full = { l: 0, t: 0, w: window.innerWidth, h: window.innerHeight };
+        var a = from || full, b = to || full;
+        if (lbRm) { done && done(); return; }
+        lbView.animate([
+          { left: a.l + "px", top: a.t + "px", width: a.w + "px", height: a.h + "px", borderRadius: from ? "18px" : "0px" },
+          { left: b.l + "px", top: b.t + "px", width: b.w + "px", height: b.h + "px", borderRadius: to ? "18px" : "0px" }
+        ], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" }).onfinish = function () { done && done(); };
+      }
+      function openLightbox(i) {
+        if (i < 0 || i >= files.length || lbOpen) return;
+        lbOpen = true; current = i;
+        deleteArmed = false;
+        updateDeleteBtn();
+        setLbMeta(i);
+        lbSetZoom(1);
         lightbox.hidden = false;
         document.body.style.overflow = "hidden";
+        lightbox.classList.add("is-open");
+        var tile = grid.children[i];
+        if (tile) tile.classList.add("away");
+        lbMorph(lbRectOf(i), null, function () {
+          lightbox.classList.add("is-ready");
+          lbClose.focus({ preventScroll: true });
+        });
       }
       function closeLightbox() {
-        lightbox.hidden = true;
-        lbImg.removeAttribute("src");
-        document.body.style.overflow = "";
-        current = -1;
+        if (!lbOpen || lbClosing) return;
+        lbClosing = true;
+        var i = current;
+        lightbox.classList.remove("is-ready", "is-zoom");
+        lbSetZoom(1);
+        lbView.style.transform = "";
+        lightbox.style.removeProperty("--lb-so");
+        lbScrim.style.opacity = "0";
+        lbMorph(null, lbRectOf(i), function () {
+          lbOpen = false; lbClosing = false;
+          lightbox.classList.remove("is-open");
+          lbScrim.style.opacity = "";
+          lightbox.hidden = true;
+          lbImg.removeAttribute("src");
+          document.body.style.overflow = "";
+          current = -1;
+          var tile = grid.children[i];
+          if (tile) { tile.classList.remove("away"); tile.focus({ preventScroll: true }); }
+        });
       }
-      function step(d) {
-        if (current < 0 || !files.length) return;
-        openLightbox((current + d + files.length) % files.length);
+      function go(d) {
+        if (!lbOpen || current < 0 || !files.length) return;
+        var n = (current + d + files.length) % files.length;
+        var prevTile = grid.children[current];
+        if (prevTile) prevTile.classList.remove("away");
+        current = n;
+        var tile = grid.children[n];
+        if (tile) tile.classList.add("away");
+        deleteArmed = false;
+        updateDeleteBtn();
+        lbSetZoom(1);
+        if (!lbRm) lbImgWrap.animate([{ transform: "translateX(" + (d * 40) + "px)", opacity: .2 }, { transform: "none", opacity: 1 }], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" });
+        setLbMeta(n);
       }
       function updateDeleteBtn() {
         lbDelete.classList.toggle("confirm", deleteArmed);
         lbDeleteLabel.textContent = deleteArmed ? "Chắc chắn xóa?" : "Xóa ảnh";
       }
-      document.getElementById("lbClose").addEventListener("click", function () { pop(); closeLightbox(); });
-      document.getElementById("lbPrev").addEventListener("click", function () { pop(); step(-1); });
-      document.getElementById("lbNext").addEventListener("click", function () { pop(); step(1); });
+      lbClose.addEventListener("click", function () { pop(); closeLightbox(); });
+      document.getElementById("lbPrev").addEventListener("click", function () { pop(); go(-1); });
+      document.getElementById("lbNext").addEventListener("click", function () { pop(); go(1); });
       lbDownload.addEventListener("click", function () { pop(); });
-      lightbox.addEventListener("click", function (e) { if (e.target === lightbox) closeLightbox(); });
+      lbScrim.addEventListener("click", function () { closeLightbox(); });
       document.addEventListener("keydown", function (e) {
         if (lightbox.hidden) return;
         if (e.key === "Escape") closeLightbox();
-        else if (e.key === "ArrowLeft") step(-1);
-        else if (e.key === "ArrowRight") step(1);
+        else if (e.key === "ArrowLeft") go(-1);
+        else if (e.key === "ArrowRight") go(1);
       });
+      lbView.addEventListener("dblclick", function (e) {
+        if (e.target.closest("button")) return;
+        var r = lbView.getBoundingClientRect(), k = lbView.clientWidth / (r.width || 1);
+        lbImgWrap.classList.remove("now");
+        lbSetZoom(lbZ > 1 ? 1 : 2, (e.clientX - r.left) * k, (e.clientY - r.top) * k);
+      });
+      lbView.addEventListener("wheel", function (e) {
+        if (!lbOpen) return;
+        e.preventDefault();
+        var r = lbView.getBoundingClientRect(), k = lbView.clientWidth / (r.width || 1);
+        lbImgWrap.classList.add("now");
+        lbSetZoom(Math.max(1, Math.min(3, lbZ * (e.deltaY < 0 ? 1.12 : 0.89))), (e.clientX - r.left) * k, (e.clientY - r.top) * k);
+      }, { passive: false });
+      var lbSx = 0, lbSy = 0, lbOx = 0, lbOy = 0, lbMode = "";
+      lbView.addEventListener("pointerdown", function (e) {
+        if (!lbOpen) return;
+        lbSx = e.clientX; lbSy = e.clientY; lbOx = lbTx; lbOy = lbTy; lbMode = "wait";
+        if (lbView.setPointerCapture) lbView.setPointerCapture(e.pointerId);
+      });
+      lbView.addEventListener("pointermove", function (e) {
+        if (!lbMode) return;
+        var r = lbView.getBoundingClientRect(), k = lbView.clientWidth / (r.width || 1);
+        var dx = (e.clientX - lbSx) * k, dy = (e.clientY - lbSy) * k;
+        if (lbMode === "wait" && Math.hypot(dx, dy) > 6) lbMode = lbZ > 1 ? "pan" : Math.abs(dy) > Math.abs(dx) ? "down" : "side";
+        if (lbMode === "pan") {
+          lbImgWrap.classList.add("now");
+          var W = lbView.clientWidth, H = lbView.clientHeight;
+          lbTx = Math.min(0, Math.max(W - W * lbZ, lbOx + dx)); lbTy = Math.min(0, Math.max(H - H * lbZ, lbOy + dy));
+          lbImgWrap.style.transform = "translate(" + lbTx + "px," + lbTy + "px) scale(" + lbZ + ")";
+        } else if (lbMode === "down") {
+          var d = Math.max(0, dy);
+          lbView.style.transform = "translateY(" + d + "px) scale(" + (1 - d / 1600) + ")";
+          lightbox.style.setProperty("--lb-so", Math.max(0.2, 1 - d / 300).toFixed(2));
+        } else if (lbMode === "side") {
+          lbImgWrap.classList.add("now");
+          lbImgWrap.style.transform = "translateX(" + dx * 0.5 + "px)";
+        }
+      });
+      function lbUp(e) {
+        if (!lbMode) return;
+        var r = lbView.getBoundingClientRect(), k = lbView.clientWidth / (r.width || 1);
+        var dx = (e.clientX - lbSx) * k, dy = (e.clientY - lbSy) * k, m = lbMode;
+        lbMode = "";
+        lbImgWrap.classList.remove("now");
+        if (m === "down") {
+          if (dy > 110) { closeLightbox(); return; }
+          lbView.style.transition = "transform .4s cubic-bezier(.34,1.4,.64,1)";
+          lbView.style.transform = "";
+          lightbox.style.removeProperty("--lb-so");
+          setTimeout(function () { lbView.style.transition = ""; }, 420);
+        } else if (m === "side") {
+          lbImgWrap.style.transform = "";
+          if (Math.abs(dx) > 70) go(dx < 0 ? 1 : -1);
+        }
+      }
+      lbView.addEventListener("pointerup", lbUp);
+      lbView.addEventListener("pointercancel", lbUp);
       lbDelete.addEventListener("click", function () {
         pop();
         if (current < 0) return;
@@ -652,24 +906,75 @@
         if (fileInput.files && fileInput.files.length) handleFiles(fileInput.files);
         fileInput.value = "";
       });
-      ["dragenter", "dragover"].forEach(function (ev) {
-        dropZone.addEventListener(ev, function (e) { e.preventDefault(); dropZone.classList.add("dragging"); });
+      dropZone.addEventListener("click", function (e) {
+        if (uploading || e.target === fileInput || (e.target.closest && e.target.closest("#pickBtn"))) return;
+        pop();
+        if (!BRIDGE_URL) { toast("Trang đang chờ nối cầu nối Drive, chưa tải lên được.", "err"); return; }
+        fileInput.click();
       });
-      ["dragleave", "drop"].forEach(function (ev) {
-        dropZone.addEventListener(ev, function (e) { e.preventDefault(); dropZone.classList.remove("dragging"); });
+      dropZone.addEventListener("keydown", function (e) {
+        if ((e.key === "Enter" || e.key === " ") && !uploading) {
+          e.preventDefault();
+          pop();
+          if (!BRIDGE_URL) { toast("Trang đang chờ nối cầu nối Drive, chưa tải lên được.", "err"); return; }
+          fileInput.click();
+        }
+      });
+      var u432Depth = 0;
+      dropZone.addEventListener("dragenter", function (e) {
+        e.preventDefault();
+        u432Depth++;
+        if (!uploading) uploader.classList.add("is-drag");
+      });
+      dropZone.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+      });
+      dropZone.addEventListener("dragleave", function () {
+        u432Depth = Math.max(0, u432Depth - 1);
+        if (!u432Depth) uploader.classList.remove("is-drag");
       });
       dropZone.addEventListener("drop", function (e) {
+        e.preventDefault();
+        u432Depth = 0;
+        uploader.classList.remove("is-drag");
         if (!BRIDGE_URL) { toast("Trang đang chờ nối cầu nối Drive, chưa tải lên được.", "err"); return; }
         var dt = e.dataTransfer;
         if (dt && dt.files && dt.files.length) handleFiles(dt.files);
       });
       document.getElementById("refreshBtn").addEventListener("click", function () { pop(); loadList(); });
 
-      function setUploadProgress(done, total, label) {
-        if (total <= 0) { uploadStatus.classList.remove("show"); return; }
-        uploadStatus.classList.add("show");
-        uploadBarFill.style.width = Math.round((done / total) * 100) + "%";
-        uploadText.textContent = label;
+      /* Vòng tiến độ #432 chạy theo tiến độ thật (done/total), không giả lập. */
+      function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+      var U432_COL = { jpg: "#0090FF", jpeg: "#0090FF", png: "#8E4EC6", webp: "#0090FF", gif: "#C27A12", heic: "#6B7280", heif: "#6B7280", bmp: "#6B7280" };
+      function uploadStart(fileName) {
+        var ext = (/\.([a-z0-9]+)$/i.exec(fileName || "") || [, "file"])[1].toLowerCase();
+        u432DocTag.style.setProperty("--c", U432_COL[ext] || "#6B7280");
+        u432DocTagText.textContent = ext.slice(0, 4).toUpperCase();
+        uploader.classList.remove("is-done", "is-out", "is-err");
+        uploader.classList.add("is-up");
+        u432RingPg.style.strokeDashoffset = 289;
+        u432Name.innerHTML = esc(fileName || "");
+      }
+      function setUploadProgress(done, total, label, fileName) {
+        if (total <= 0) return;
+        var pct = Math.round((done / total) * 100);
+        u432RingPg.style.strokeDashoffset = (289 * (1 - done / total)).toFixed(1);
+        if (fileName) {
+          var ext = (/\.([a-z0-9]+)$/i.exec(fileName) || [, "file"])[1].toLowerCase();
+          u432DocTag.style.setProperty("--c", U432_COL[ext] || "#6B7280");
+          u432DocTagText.textContent = ext.slice(0, 4).toUpperCase();
+        }
+        u432Name.innerHTML = esc(fileName || "") + " <small>· " + pct + "%</small>";
+        u432Live.textContent = label;
+      }
+      function uploadFinish(allOk) {
+        if (allOk) uploader.classList.add("is-done");
+        else uploader.classList.add("is-err");
+        setTimeout(function () {
+          uploader.classList.add("is-out");
+          setTimeout(function () { uploader.classList.remove("is-up", "is-done", "is-out", "is-err"); }, 350);
+        }, 1700);
       }
 
       function readAsBase64(blob) {
@@ -761,13 +1066,14 @@
         if (!list.length) { toast("Chưa thấy file ảnh nào trong số đã chọn.", "err"); return; }
         uploading = true;
         pickBtn.disabled = true;
+        uploadStart(list[0].name);
         var knownIds = {};
         files.forEach(function (f) { knownIds[f.id] = true; });
         var done = 0, okCount = 0;
         var chain = Promise.resolve();
         list.forEach(function (file) {
           chain = chain.then(function () {
-            setUploadProgress(done, list.length, "Đang tải " + (done + 1) + "/" + list.length + ": " + file.name);
+            setUploadProgress(done, list.length, "Đang tải " + (done + 1) + "/" + list.length + ": " + file.name, file.name);
             return prepareFile(file).then(function (payload) {
               if (!payload) return false;
               return postToBridge(payload).then(function () {
@@ -776,14 +1082,14 @@
             }).then(function (ok) {
               done++;
               if (ok) { okCount++; knownIds = {}; files.forEach(function (f) { knownIds[f.id] = true; }); }
-              setUploadProgress(done, list.length, "Đang tải " + Math.min(done + 1, list.length) + "/" + list.length + "…");
+              setUploadProgress(done, list.length, "Đang tải " + Math.min(done + 1, list.length) + "/" + list.length + "…", file.name);
             });
           });
         });
         chain.then(function () {
           uploading = false;
           pickBtn.disabled = false;
-          setUploadProgress(0, 0, "");
+          uploadFinish(okCount === list.length);
           if (okCount === list.length) toast("Đã tải lên " + okCount + " ảnh vào Drive của nhóm.", "ok");
           else if (okCount > 0) toast("Tải được " + okCount + "/" + list.length + " ảnh. Mấy ảnh còn lại thử lại nhé.", "err");
           else toast("Chưa tải lên được. Kiểm tra mạng rồi thử lại nhé.", "err");
@@ -793,6 +1099,80 @@
 
       /* ---------- Khởi động ---------- */
       loadList();
+    </script>
+    <script>
+      /* Chu nhay theo chuot cho tieu de trang anh — Lucian UX/UI #205 (xem ghi chu CSS o tren). */
+      (function () {
+        var rm = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+        if (rm) return;
+        var SIG = 34;
+        function splitLetters(el) {
+          var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+          var nodes = [];
+          while (walker.nextNode()) nodes.push(walker.currentNode);
+          var letters = [];
+          nodes.forEach(function (node) {
+            var text = node.nodeValue;
+            if (!text) return;
+            var inAccent = false, p = node.parentNode;
+            while (p && p !== el) { if (p.classList && (p.classList.contains("accent") || p.classList.contains("title-accent"))) { inAccent = true; break; } p = p.parentNode; }
+            var parts = (window.Intl && Intl.Segmenter)
+              ? Array.from(new Intl.Segmenter("vi", { granularity: "grapheme" }).segment(text), function (s) { return s.segment; })
+              : Array.from(text);
+            var frag = document.createDocumentFragment();
+            parts.forEach(function (ch) {
+              if (ch.trim() === "") { frag.appendChild(document.createTextNode(ch)); return; }
+              var s = document.createElement("span");
+              s.className = "u205-l" + (inAccent ? " in-accent" : "");
+              s.textContent = ch;
+              frag.appendChild(s);
+              letters.push(s);
+            });
+            node.parentNode.replaceChild(frag, node);
+          });
+          return letters;
+        }
+        function ripple(el) {
+          var spans = splitLetters(el);
+          if (!spans.length) return;
+          var fs = parseFloat(window.getComputedStyle(el).fontSize) || 24;
+          var amp = Math.round(fs * 0.55);
+          var L = spans.map(function (s) { return { el: s, x: 0, y: 0, v: 0 }; });
+          var px = null, raf = 0;
+          function measure() {
+            var r = el.getBoundingClientRect();
+            L.forEach(function (l) {
+              var b = l.el.getBoundingClientRect();
+              l.x = b.left + b.width / 2 - r.left;
+            });
+          }
+          function g(d, s) { return Math.exp(-(d * d) / (2 * s * s)); }
+          function tick() {
+            raf = 0;
+            if (!el.isConnected) return;
+            var moving = false;
+            L.forEach(function (l) {
+              var tgt = 0;
+              if (px != null) tgt -= amp * g(l.x - px, SIG);
+              l.v += (tgt - l.y) * 0.16;
+              l.v *= 0.8;
+              l.y += l.v;
+              if (Math.abs(l.v) > 0.02 || Math.abs(tgt - l.y) > 0.05) moving = true;
+              var t = Math.min(1, Math.max(0, -l.y / (amp * 1.5)));
+              l.el.style.setProperty("--y", l.y.toFixed(2) + "px");
+              l.el.style.setProperty("--sy", (1 + Math.max(-0.08, Math.min(0.14, -l.v * 0.02))).toFixed(3));
+              l.el.style.setProperty("--t", t.toFixed(3));
+            });
+            if (moving || px != null) raf = requestAnimationFrame(tick);
+          }
+          function kick() { if (!raf) raf = requestAnimationFrame(tick); }
+          function local(e) { var r = el.getBoundingClientRect(); return e.clientX - r.left; }
+          el.addEventListener("pointermove", function (e) { measure(); px = local(e); kick(); });
+          el.addEventListener("pointerleave", function () { px = null; kick(); });
+        }
+        var title = document.querySelector("h1");
+        if (title) ripple(title);
+      })();
     </script>
   </body>
 </html>
